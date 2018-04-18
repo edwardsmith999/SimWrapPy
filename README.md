@@ -67,7 +67,7 @@ Example usage from a higher level:
     run.finish()
 
 
-##InputUtils
+## InputUtils
 
 A set of utilities for creating parameter studies in a quick and intuative way.
 
