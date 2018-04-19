@@ -52,40 +52,8 @@ def reverse_readline(filename, buf_size=8192):
         # Don't yield None if the file was empty
         if segment is not None:
             yield segment
-#class changefile:
-#    """Context manager for changing the current file"""
-#    def __init__(self, oldfile, newfile=None):
-#        self.oldfile = oldfile
-#        if newfile == None:
-#            self.newfile = oldfile + '.bak'
-#        else:
-#            self.newfile = newfile
-#        #Create temp directory
-#        self.fh, self.abs_path = mkstemp()
 
-#    def __enter__(self):
-#        open(self.abs_path,'w') as self.new_file
-#        open(self.filename) as self.old_file
-
-#    def __exit__(self, etype, value, traceback):
-#        self.new_file.close()
-#        self.old_file.close()
-#        os.close(self.fh)
-#        os.remove(self.filename)
-#        #Move new file
-#        move(self.abs_path, self.filename)
-
-
-#    def generator():
-#        for line in self.old_file:
-#            self.new_file.write(line)
-#            if not line:
-#                continue
-#            yield line
-
-
-
-class InputMod:
+class InputMod(object):
 
     def __init__(self, filename):
         self.filename = filename
@@ -93,10 +61,11 @@ class InputMod:
     def replace_input(self, keyword, keyvals):    
         raise NotImplementedError
 
-class MDInputMod(InputMod):
+
+class KeywordInputMod(InputMod):
 
     def __init__(self, filename):
-        self.filename = filename
+        super(KeywordInputMod, self).__init__(filename)
     
     def replace_input(self, keyword, keyvals):    
 
@@ -168,17 +137,35 @@ class MDInputMod(InputMod):
             quit('Input string ' + keyword + 
                  ' not found, appended to file instead.')
 
-
-class CFDInputMod(InputMod):
-    
+class MDInputMod(KeywordInputMod):
     def __init__(self,filename):
-        InputMod.__init__(self,filename) 
+        super(MDInputMod, self).__init__(filename)
+
+class CommentedInputMod(InputMod):
+    
+    def __init__(self, filename):
+        super(CommentedInputMod, self).__init__(filename)
   
     def replace_input(self, keyword, keyval):
          
         """ 
             Replace value before all appearances of
-            keyword with keyval 
+            keyword with keyval. For example if 
+            you have a file with valeus and comments as follows:
+
+            500000              !Number of computational steps
+            100                 !Frequency of ouput plots
+            4                   !Number of cells in Domain in x - nx
+            8                   !Number of cells in Domain in y - ny
+            4                   !DUMMY Number of cells in Domain in z - nz
+            47.6220315590460    !Domain size in x - lx
+            46.98707113825872   !Domain size in y - ly
+            47.6220315590460    !DUMMY Domain size in z - lz
+            0.005               !Time step delta t
+            1.6                 !Viscosity
+            0.8                 !Density
+
+            you can use keyword="Viscosity" and change this keyval
 
         """
         f = open(self.filename,'r')
@@ -204,6 +191,10 @@ class CFDInputMod(InputMod):
             print('Input string '+keyword+' not found.')
         sh.move(self.filename+'.tmp',self.filename) 
 
+class CFDInputMod(CommentedInputMod):
+    def __init__(self,filename):
+        super(CFDInputMod, self).__init__(filename)
+
 
 class OpenFOAMInputMod(InputMod):
 
@@ -211,41 +202,6 @@ class OpenFOAMInputMod(InputMod):
         self.fdir = fdir
         self.headerObj = openfoam_HeaderData(fdir)
         self.HD = self.headerObj.headerDict
-
-    #OpenFOAM input has no consistent format
-    #but various patterns such as:
-    # 1) Keyword with data to change in () brackets on next two lines
-    # 2) Keyword with data to change in {} brackets on next two lines
-    # 3) Keyword with data to change as number following
-    # 4) Keyword with data to change in brackets following
-
-#    def replace_hex(line, new_file, keyvals):
-#        newlinebase = line #line.split("'")[1]
-#        cells = str(keyvals[0]) + " " + str(keyvals[1]) + " " + str(keyvals[2])
-#        elements = newlinebase.replace('(',')').split(")")
-#        elements[3] = cells
-#        brackets = ["(", ")"]
-#        newline = ''.join([str(e) + brackets[i%2] for i,e in enumerate(elements)])[:-1]
-#        #print(newlinebase, newline, newline==newlinebase)
-#        new_file.write(newline)
-
-##    def replace_proces(line, new_file, keyvals):
-
-
-#    def replace_domain(line, new_file, keyvals):
-#        xo, yo, zo, Lx, Ly, Lz = keyvals
-#        newvertices = (
-#        "(\n" + 
-#        "    (" + str(xo) + " " + str(yo) + " " + str(zo) + ")\n"
-#        "    (" + str(Lx) + " " + str(yo) + " " + str(zo) + ")\n"
-#        "    (" + str(Lx) + " " + str(Ly) + " " + str(zo) + ")\n"
-#        "    (" + str(xo) + " " + str(Ly) + " " + str(zo) + ")\n"
-#        "    (" + str(xo) + " " + str(yo) + " " + str(Lz) + ")\n"
-#        "    (" + str(Lx) + " " + str(yo) + " " + str(Lz) + ")\n"
-#        "    (" + str(Lx) + " " + str(Ly) + " " + str(Lz) + ")\n"
-#        "    (" + str(xo) + " " + str(Ly) + " " + str(Lz) + ")\n"
-#        ");\n")
-#        new_file.write(newvertices)
 
     def replace_input(self, keyword, keyvals):    
 
@@ -329,8 +285,8 @@ class OpenFOAMInputMod(InputMod):
             if "not found" in err:
                 print("WARNING -- decomposePar not found, have you called SOURCEME.sh in OpenFOAM APP")
 
-class LammpsInputMod(InputMod):
 
+class LineInputMod(InputMod):
 
     def __init__(self, filename):
         self.filename = filename
@@ -338,7 +294,39 @@ class LammpsInputMod(InputMod):
     def replace_input(self, keyword, keyvals):    
 
         """ 
-            Replace Lammps
+            Replace values in a file where
+            we find a keyword on the line. For example
+            from LAMMPS (with random spacing):
+
+            variable            maxy equal 2.0
+            variable minz equal 0.0
+            variable    maxz equal 2.0
+
+            lattice fcc ${lat_scale}
+            region reg block ${minx} ${maxx} ${miny} ${maxy} ${minz} ${maxz} units box
+            create_box          1 reg
+            create_atoms        1 region porous units box
+            set     type 1 diameter ${diameter} density ${density} 
+
+            neighbor    5e-03 bin
+            neigh_modify     once yes exclude type 1 1
+
+            ...
+
+            fix  5 all cpl/init region all forcetype Drag Cd ${Cd} sendtype granfull
+
+            The replace input strings then can be a unique combination of words
+            which identify the first part of the string, e.g.
+
+            replace_input("variable maxz", "equal 1.0")
+
+            also you can specify a keyword hidden half way along the string
+            where only the part after that word needs to be specified.
+
+            replace_input("cpl/init", "region all forcetype Drag Cd 5.0 sendtype granfull")
+
+            Note, multiple spacing is reduced to one in both input and keywords.
+        
         """
 
         replacefile = self.filename + ".new"
@@ -348,16 +336,33 @@ class LammpsInputMod(InputMod):
                 for line in old_file:
                     l = line.strip().replace("\t","")
                     ls = " ".join(l.split())
-                    if keyword in ls:
-                        #Replace line which contains keyword with values
-                        nl = keyword + "   "
-                        nl += " ".join([str(v) for v in keyvals])
+                    kw = " ".join(keyword.split())
+                    if kw in ls:
+                        indx = ls.find(kw)
+                        if  indx == 0:
+                            #Replace line which contains keyword with values
+                            nl = keyword + "   "
+                        else:
+                            nl = ls[:indx] + " " + keyword + " "
+                        if type(keyvals) is list:
+                            nl += " ".join([str(v) for v in keyvals])
+                        elif type(keyvals) is str:
+                            nl += keyvals
+                        elif type(keyvals) in (int, float):
+                            nl += str(keyvals)
+                        else:
+                            raise TypeError("Unsupported keyvals type ", type(keyvals))
                         new_file.write(nl+"\n")
                     else:
                         new_file.write(line)
 
         #Replace original file
         sh.copy(replacefile, self.filename)
+
+
+class LammpsInputMod(LineInputMod):
+    def __init__(self, filename):
+        super(LammpsInputMod, self).__init__(filename)
 
 #List of Dictonary classes with added routines to add and multiple inputs
 class InputList(list):

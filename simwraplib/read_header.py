@@ -5,6 +5,21 @@ import shutil as sh
 
 class openfoam_HeaderData:
 
+    """
+        A recursive reader and changer for Openfoam
+        input system. Pyfoam does this but is massive
+        so easier to just provide a minimal script.
+        How well this work depends on the files:
+        OpenFOAM input has no consistent format
+        but various patterns such as:
+         1) Keyword with data to change in () brackets on next two lines
+         2) Keyword with data to change in {} brackets on next two lines
+         3) Keyword with data to change as number following
+         4) Keyword with data to change in brackets following
+         5) Keyword with units in [] and then data to change following
+        As a result, this is a horrible bit of code below...
+    """
+
     def __init__(self, fdir, readfields=False):
 
         if (fdir[-1] != '/'): fdir += '/'
