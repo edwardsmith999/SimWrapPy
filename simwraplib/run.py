@@ -79,7 +79,7 @@ class Run(object):
                  rundir=None,
                  executable=None,
                  inputfile=None,
-                 outputfile=None,
+                 outputfile="output",
                  inputchanges={},
                  initstate=None,
                  restartfile=None,
@@ -92,6 +92,13 @@ class Run(object):
                  finishargs={},
                  dryrun=True,
                  deleteoutput=False):
+
+        if (srcdir is None):
+            raise IOError(srcdir + " not specified")
+        if (basedir is None):
+            raise IOError(basedir + " not specified")
+        if (rundir is None):
+            raise IOError(rundir + " not specified")
 
         #Check src directory exists
         if os.path.isdir(srcdir):
@@ -124,7 +131,11 @@ class Run(object):
             if os.path.isfile(basedir+executable):
                 self.executable = executable
             else:
-                raise IOError("Executable "+basedir+executable+" not found")
+                #Try to build exectuable
+                print("Executable "+basedir+executable+" not found, trying to build")
+                self.build_executable()
+                if not os.path.isfile(basedir+executable):
+                    raise IOError("Executable "+basedir+executable+" not found")
 
         #Check inputfile specified exist in basedir
         if os.path.isfile(basedir+inputfile):
@@ -197,8 +208,32 @@ class Run(object):
         else:
             raise TypeError("extraargs input should be dictonary")
 
-    def build_executable(self):
-        raise NotImplementedError
+
+    def build_executable(self, buildstr=""):
+
+        """
+           Trigger a (re)build of specified executable from
+           the source code directory
+                
+        """
+
+        print("Attempting to build code from executable")
+        print("Note that this is not really the responsisbility")
+        print("of simwraplib which expects the user to have done this")
+
+        #First try make
+        try:
+            cmdstg = 'make'
+  
+            #Call build and wait until build has finished 
+            #before returning control to caller
+            split_cmdstg = shlex.split(cmdstg)
+            self.build = sp.Popen(split_cmdstg, cwd=self.srcdir)      
+            self.build.wait()
+
+        except:
+            print("Build Failed, try building manually before running simwraplib")
+            raise
 
     def copyfile(self, f):
 
@@ -368,6 +403,10 @@ class Run(object):
 
         self.mpiexec = self.prepare_mpiexec()
         cmd_args = self.prepare_cmd_arguments()
+
+        #Add call to python
+        if (".py" in executable) and not ("python" in executable):
+             executable = "python " + executable
 
         if self.cmd_includes_procs():
             cmd = (self.mpiexec + " -n " + str(nprocs) 
