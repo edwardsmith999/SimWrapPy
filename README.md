@@ -4,10 +4,10 @@ A wrapper which allows parameter simulation of LAMMPS, OpenFOAM, Flowmol and cou
 
 ## Key Features
 
- - A wrapper which creates a folder with copies of everything needed for a self contained and repeatable run (including source code. 
+ - A wrapper which creates a folder with copies of everything needed for a self contained and repeatable run (including source code.
  - A set of input utilities which allow the quick construction of permutations and combinations (using overloaded add/multiply).
- - A higher level interface for running codes with a key set of functions: setup, run and finish. The base run class specifies a lot of the difficult task of depolying on vaious supercomputing platforms using PBS submission scripts.
- - The thread and study class allows multiprocessor parallelism by queing jobs to utilise the available resources using an internal semiphore system. 
+ - A higher level interface for running codes with a key set of functions: setup, run and finish. The base run class specifies a lot of the difficult task of deploying on various supercomputing platforms using PBS submission scripts.
+ - The thread and study class allows multiprocessor parallelism by queuing jobs to utilise the available resources using an internal semaphore system.
  - A framework to setup coupled simulations (setup with http://www.cpl-library.org/) as a combination of multiple run objects.
  
 ## Quickstart
@@ -49,7 +49,7 @@ Consider the minimal example in the examples folder: minimal_example.py
     # Run the study
     study = swl.Study(threadlist, ncpus)
 
-The python script in `./minimal_example/bin`, called `hello.py` which reads and prints a file is then run 9 times, 
+The python script in `./minimal_example/bin`, called `hello.py` which reads and prints a file is then run 9 times,
 
     with open("./input/inputfile") as f:
         filestr = f.read().split("\n")
@@ -62,30 +62,30 @@ each in a seperate directory under run. The input file `inputfile` from `./minim
     othervariablename
     2
     
-and stored for each directory. 
-The `./minimal_example/src` directory is also packaged up as a tarball in each case. 
+and stored for each directory.
+The `./minimal_example/src` directory is also packaged up as a tarball in each case.
 
 ## Structure and Objects
 
 At the top level, you create a study. Each study contains a number of threads which each run using the multiprocessor framework in Python. You can specify how many to run at the same time based on the compute resource you have available.
   - study - manages the running of all threads in blocks based on specified max number of cpus
   - thread - a subprocess running on a thread (should be one per cpu)
-  - run - an object which creates the folder structure, changes inputs and runs the specified exectuable
+  - run - an object which creates the folder structure, changes inputs and runs the specified executable
   - inpututils - helper functions to change input files for various codes
 
 ## Run Objects
 
-When instatiated, Run should create a new folder as a "run" 
-directory (if it doesn't already exist) and copy the necessary files 
+When instantiated, Run should create a new folder as a "run"
+directory (if it doesn't already exist) and copy the necessary files
 from a "base" directory into it. All the information necessary for
 execution of the run is stored from the following inputs to the
-constructor: 
+constructor:
 
     Directories:
 
         srcdir  - path to source code folder
         basedir - path from which input/restart/etc files are copied
-        rundir  - path in which the run will take place, files are 
+        rundir  - path in which the run will take place, files are
                   copied from basedir to here.
 
     Copied files:
@@ -93,13 +93,13 @@ constructor:
         executable   - name of executable (e.g. a.out)
         inputfile    - input file name
         extrafiles   - a List of additional files copied to rundir
-        initstate    - initial state file that is TO BE COPIED 
+        initstate    - initial state file that is TO BE COPIED
                        FROM THE BASE DIRECTORY
         restartfile  - initial state "restart" file, assumed to be
                        already located at the given path that is
                        RELATIVE TO THE RUN DIRECTORY
 
-    New files: 
+    New files:
 
         outputfile - output file name
 
@@ -107,11 +107,11 @@ constructor:
 
         inputchanges - dictionary of changes to make to the inputfile
                        once copied from the base directory
-        finishargs   - list of lists: keywords and associated commands 
+        finishargs   - list of lists: keywords and associated commands
                        that specify a range of actions to perform
                        when the execution of the run has finished. See
                        the comments at the top of finish() for more
-                       info. 
+                       info.
         
 
 
@@ -125,23 +125,23 @@ Example usage from a higher level:
 
 ## InputUtils
 
-A set of utilities for creating parameter studies in a quick and intuative way.
+A set of utilities for creating parameter studies in a quick and intuitive way.
 
-Specifying the input changes are done as a dictonary with the keywords you'd like to change with the corresponding value as a list of what you'd like to set the simulation input parameters to:
+Specifying the input changes are done as a dictionary with the keywords you'd like to change with the corresponding value as a list of what you'd like to set the simulation input parameters to:
 
     inputs1 = swl.InputDict({'cells': [[8, 8, 8], [16, 16, 16]]})
     inputs2 = swl.InputDict({'processors': [1, 1, 1], [2, 2, 2]})
 
 We can then specify the parameter study for corresponding pair by adding
 
-    changes = inputs1 + inputs2 
+    changes = inputs1 + inputs2
     
 where `changes` is then a list of paired dictonaries:
 
     [{'cells': [8, 8, 8], 'processors': [1, 1, 1]},
      {'cells': [16, 16, 16], 'processors': [2, 2, 2]}]
      
-Alternativly we could multiply to get all permutations,
+Alternatively we could multiply to get all permutations,
 
     changes = inputs1 * inputs2
     
@@ -159,17 +159,17 @@ The input changes to openFOAM works as follows:
 
     Replace OpenFOAM
 
-    Currently support  'cell', 'domainsize', 
+    Currently support  'cell', 'domainsize',
     'origin' and 'process' keywords with list of three
     values for each. The user can also specify the full
-    OpenFOAM format in the slightly cumbersome but completely 
+    OpenFOAM format in the slightly cumbersome but completely
     consistent form of nested dicts/lists, for example to set cells
     keyword = "blockMeshDict"
     keyvals = {"blocks":{"hex":["keep",[8,8,8],"keep","keep"]}}
     where the "keep" keyword says to skip replacing values.
     also, to set processors
     keyword = ["decomposeParDict", "decomposeParDict"]
-    keyvals = [{"numberOfSubdomains":8}, 
+    keyvals = [{"numberOfSubdomains":8},
                {"numberOfSubdomains":{simpleCoeffs:{"n":[2,2,2]}}}]
                
  ### LAMMPS input changes
@@ -188,7 +188,7 @@ The input changes to openFOAM works as follows:
     region reg block ${minx} ${maxx} ${miny} ${maxy} ${minz} ${maxz} units box
     create_box          1 reg
     create_atoms        1 region porous units box
-    set     type 1 diameter ${diameter} density ${density} 
+    set     type 1 diameter ${diameter} density ${density}
 
     neighbor    5e-03 bin
     neigh_modify     once yes exclude type 1 1
@@ -228,7 +228,7 @@ where the two values can be changed
 
 Now we have a set of changes and we know how to create run objects, we want to setup a study by creating a list of run directories to pass to study.
 
-    #Set the maximum number of cpus to use for these runs 
+    #Set the maximum number of cpus to use for these runs
     ncpus = 6
     
     #Get the folder/file name to store run for each change
@@ -261,3 +261,6 @@ Now we have a set of changes and we know how to create run objects, we want to s
     # Run the study
     study = swl.Study(threadlist, ncpus)
     
+
+
+
