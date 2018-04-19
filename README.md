@@ -142,17 +142,17 @@ The input changes to openFOAM works as follows:
 
     fix  5 all cpl/init region all forcetype Drag Cd ${Cd} sendtype granfull
 
-    The replace input strings then can be a unique combination of words
-    which identify the first part of the string, e.g.
+The replace input strings then can be a unique combination of words
+which identify the first part of the string, e.g.
 
     replace_input("variable maxz", "equal 1.0")
 
-    also you can specify a keyword hidden half way along the string
-    where only the part after that word needs to be specified.
+also you can specify a keyword hidden half way along the string
+where only the part after that word needs to be specified.
 
     replace_input("cpl/init", "region all forcetype Drag Cd 5.0 sendtype granfull")
 
-    Note, multiple spacing is reduced to one in both input and keywords.
+Note, multiple spacing is reduced to one in both input and keywords.
  
  ### Other input changes
 
