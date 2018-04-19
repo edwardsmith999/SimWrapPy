@@ -13,9 +13,10 @@ A wrapper which allows parameter simulation of LAMMPS, OpenFOAM, Flowmol and cou
 ## Structure and Objects
 
 At the top level, you create a study. Each study contains a number of threads which each run using the multiprocessor framework in Python. You can specify how many to run at the same time based on the compute resource you have available.
-  - study
-  - thread
-  - run
+  - study - manages the running of all threads in blocks based on specified max number of cpus
+  - thread - a subprocess running on a thread (should be one per cpu)
+  - run - an object which creates the folder structure, changes inputs and runs the specified exectuable
+  - inpututils - helper functions to change input files for various codes
 
 ## Quickstart
 
@@ -97,6 +98,77 @@ which would give 4 different sets of changes to an input,
      {'cells': [16, 16, 16], 'processors': [2, 2, 2]}]
 
 
+### OpenFOAM input changes
+
+The input changes to openFOAM works as follows:
+
+    Replace OpenFOAM
+
+    Currently support  'cell', 'domainsize', 
+    'origin' and 'process' keywords with list of three
+    values for each. The user can also specify the full
+    OpenFOAM format in the slightly cumbersome but completely 
+    consistent form of nested dicts/lists, for example to set cells
+    keyword = "blockMeshDict"
+    keyvals = {"blocks":{"hex":["keep",[8,8,8],"keep","keep"]}}
+    where the "keep" keyword says to skip replacing values.
+    also, to set processors
+    keyword = ["decomposeParDict", "decomposeParDict"]
+    keyvals = [{"numberOfSubdomains":8}, 
+               {"numberOfSubdomains":{simpleCoeffs:{"n":[2,2,2]}}}]
+               
+ ### LAMMPS input changes
+ 
+ The LAMMPS input file can be adapted as follows,
+ 
+    Replace values in a file where
+    we find a keyword on the line. For example
+    from LAMMPS (with random spacing):
+
+    variable            maxy equal 2.0
+    variable minz equal 0.0
+    variable    maxz equal 2.0
+
+    lattice fcc ${lat_scale}
+    region reg block ${minx} ${maxx} ${miny} ${maxy} ${minz} ${maxz} units box
+    create_box          1 reg
+    create_atoms        1 region porous units box
+    set     type 1 diameter ${diameter} density ${density} 
+
+    neighbor    5e-03 bin
+    neigh_modify     once yes exclude type 1 1
+
+    ...
+
+    fix  5 all cpl/init region all forcetype Drag Cd ${Cd} sendtype granfull
+
+    The replace input strings then can be a unique combination of words
+    which identify the first part of the string, e.g.
+
+    replace_input("variable maxz", "equal 1.0")
+
+    also you can specify a keyword hidden half way along the string
+    where only the part after that word needs to be specified.
+
+    replace_input("cpl/init", "region all forcetype Drag Cd 5.0 sendtype granfull")
+
+    Note, multiple spacing is reduced to one in both input and keywords.
+ 
+ ### Other input changes
+
+Other formats include lines with a number followed by a comment
+
+    3.14159     !PI
+    42          !Meaning of life
+
+and keyword as used in CPL, e.g.
+
+    SOMEKEYWORD
+    1
+    2
+
+where the two values can be changed
+
 ## Setting up a study
 
 Now we have a set of changes and we know how to create run objects, we want to setup a study by creating a list of run directories to pass to study.
@@ -133,3 +205,4 @@ Now we have a set of changes and we know how to create run objects, we want to s
 
     # Run the study
     study = swl.Study(threadlist, ncpus)
+    
