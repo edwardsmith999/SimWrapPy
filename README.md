@@ -9,6 +9,61 @@ A wrapper which allows parameter simulation of LAMMPS, OpenFOAM, Flowmol and cou
  - A higher level interface for running codes with a key set of functions: setup, run and finish. The base run class specifies a lot of the difficult task of depolying on vaious supercomputing platforms using PBS submission scripts.
  - The thread and study class allows multiprocessor parallelism by queing jobs to utilise the available resources using an internal semiphore system. 
  - A framework to setup coupled simulations (setup with http://www.cpl-library.org/) as a combination of multiple run objects.
+ 
+## Quickstart
+
+Consider the minimal example in the examples folder: minimal_example.py
+
+    #! /usr/bin/env python2.7
+    import sys
+    sys.path.append("../")
+    import simwraplib as swl
+
+    # Inputs that are the same for every thread
+    basedir = './minimal_example/'
+    srcdir =  basedir + "src/"
+    executables = 'bin/hello.py'
+    inputfile = 'input/inputfile'
+
+    #Setup a set of changes for all permutations of two variables
+    inputs1 = swl.InputDict({"variablename": [i for i in range(3)]})
+    inputs2 = swl.InputDict({"othervariablename": [i for i in range(3)]})
+    changes = inputs1 * inputs2
+    filenames = changes.filenames(seperator="_")
+
+    #Loop over all changes and create a run object for each
+    threadlist =[]
+    for thread, change in enumerate(changes):
+         rundir = basedir + '/runs/' + filenames[thread]
+         run = swl.MinimalRun(srcdir, basedir,rundir,
+                              executables,inputfile,
+                              inputchanges=change)
+                              
+         #One run for this thread (i.e. no setup run before main run)
+         runlist = [run]
+         threadlist.append(runlist)
+
+    # Number of cpus to use (run in blocks of 4)
+    ncpus = 4
+
+    # Run the study
+    study = swl.Study(threadlist, ncpus)
+
+The python script in `./minimal_example/bin`, called `hello.py` which reads and prints a file is then run 9 times, 
+
+    with open("./input/inputfile") as f:
+        filestr = f.read().split("\n")
+        print("Hello World " + filestr[1] + " " + filestr[3] + "\n")
+
+each in a seperate directory under run. The input file `inputfile` from `./minimal_example/input` is asjusted for each case
+
+    variablename
+    3
+    othervariablename
+    2
+    
+and stored for each directory. 
+The `./minimal_example/src` directory is also packaged up as a tarball in each case. 
 
 ## Structure and Objects
 
@@ -18,7 +73,7 @@ At the top level, you create a study. Each study contains a number of threads wh
   - run - an object which creates the folder structure, changes inputs and runs the specified exectuable
   - inpututils - helper functions to change input files for various codes
 
-## Quickstart
+## Run Objects
 
 When instatiated, Run should create a new folder as a "run" 
 directory (if it doesn't already exist) and copy the necessary files 
