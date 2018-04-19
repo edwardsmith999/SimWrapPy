@@ -10,6 +10,17 @@ A wrapper which allows parameter simulation of LAMMPS, OpenFOAM, Flowmol and cou
  - The thread and study class allows multiprocessor parallelism by queuing jobs to utilise the available resources using an internal semaphore system.
  - A framework to setup coupled simulations (setup with http://www.cpl-library.org/) as a combination of multiple run objects.
  
+
+## Structure and Objects
+
+At the top level, you create a study. Each study contains a number of threads which each run using the multiprocessor framework in Python. You can specify how many to run at the same time based on the compute resource you have available.
+  - study - manages the running of all threads in blocks based on specified max number of cpus
+  - thread - a subprocess running on a thread (should be one per cpu)
+  - run - an object which creates the folder structure, changes inputs and runs the specified executable
+  - inpututils - helper functions to change input files for various codes
+All runs are defined in terms of an existing code directory with src code, an executable, the location of the  input files and the directory in which to run. 
+The user then specifies changes to this base directory to be made in each of the different runs.
+ 
 ## Quickstart
 
 Consider the minimal example in the examples folder: minimal_example.py
@@ -65,14 +76,6 @@ each in a seperate directory under run. The input file `inputfile` from `./minim
 and stored for each directory.
 The `./minimal_example/src` directory is also packaged up as a tarball in each case.
 
-## Structure and Objects
-
-At the top level, you create a study. Each study contains a number of threads which each run using the multiprocessor framework in Python. You can specify how many to run at the same time based on the compute resource you have available.
-  - study - manages the running of all threads in blocks based on specified max number of cpus
-  - thread - a subprocess running on a thread (should be one per cpu)
-  - run - an object which creates the folder structure, changes inputs and runs the specified executable
-  - inpututils - helper functions to change input files for various codes
-
 ## Run Objects
 
 When instantiated, Run should create a new folder as a "run"
@@ -122,6 +125,9 @@ Example usage from a higher level:
     run.execute()
     run.finish()
 
+The most important input for a parameter study is the `inputchanges` which specifies how
+the input file is to be changed before running the code. The next section details how we set this up. 
+
 
 ## InputUtils
 
@@ -157,28 +163,31 @@ which would give 4 different sets of changes to an input,
 
 The input changes to openFOAM works as follows:
 
-    Replace OpenFOAM
+Currently support for  `cell`, `domainsize`,
+`origin` and `process` keywords with list of three
+values for each. 
+The user can also specify the full
+OpenFOAM format in the slightly cumbersome but completely
+consistent form of nested dicts/lists, for example to set cells
 
-    Currently support  'cell', 'domainsize',
-    'origin' and 'process' keywords with list of three
-    values for each. The user can also specify the full
-    OpenFOAM format in the slightly cumbersome but completely
-    consistent form of nested dicts/lists, for example to set cells
     keyword = "blockMeshDict"
     keyvals = {"blocks":{"hex":["keep",[8,8,8],"keep","keep"]}}
-    where the "keep" keyword says to skip replacing values.
-    also, to set processors
+    
+where the "keep" keyword says to skip replacing values.
+Also, to set processors, we need to change `numberOfSubdomains` 
+and `simpleCoeffs` in the input file.
+
     keyword = ["decomposeParDict", "decomposeParDict"]
     keyvals = [{"numberOfSubdomains":8},
                {"numberOfSubdomains":{simpleCoeffs:{"n":[2,2,2]}}}]
                
  ### LAMMPS input changes
  
- The LAMMPS input file can be adapted as follows,
+The LAMMPS input file can be adapted as follows:
  
-    Replace values in a file where
-    we find a keyword on the line. For example
-    from LAMMPS (with random spacing):
+Replace values in a file where
+we find a keyword on the line. For example
+from LAMMPS (with random spacing):
 
     variable            maxy equal 2.0
     variable minz equal 0.0
@@ -192,9 +201,7 @@ The input changes to openFOAM works as follows:
 
     neighbor    5e-03 bin
     neigh_modify     once yes exclude type 1 1
-
     ...
-
     fix  5 all cpl/init region all forcetype Drag Cd ${Cd} sendtype granfull
 
 The replace input strings then can be a unique combination of words
