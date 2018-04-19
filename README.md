@@ -67,3 +67,69 @@ Example usage from a higher level:
     run.finish()
 
 
+## InputUtils
+
+A set of utilities for creating parameter studies in a quick and intuative way.
+
+Specifying the input changes are done as a dictonary with the keywords you'd like to change with the corresponding value as a list of what you'd like to set the simulation input parameters to:
+
+    inputs1 = swl.InputDict({'cells': [[8, 8, 8], [16, 16, 16]]})
+    inputs2 = swl.InputDict({'processors': [1, 1, 1], [2, 2, 2]})
+
+We can then specify the parameter study for corresponding pair by adding
+
+    changes = inputs1 + inputs2 
+    
+where `changes` is then a list of paired dictonaries:
+
+    [{'cells': [8, 8, 8], 'processors': [1, 1, 1]},
+     {'cells': [16, 16, 16], 'processors': [2, 2, 2]}]
+     
+Alternativly we could multiply to get all permutations,
+
+    changes = inputs1 * inputs2
+    
+which would give 4 different sets of changes to an input,
+
+    [{'cells': [8, 8, 8], 'processors': [1, 1, 1]},
+     {'cells': [8, 8, 8], 'processors': [2, 2, 2]},
+     {'cells': [16, 16, 16], 'processors': [1, 1, 1]},
+     {'cells': [16, 16, 16], 'processors': [2, 2, 2]}]
+
+
+## Setting up a study
+
+Now we have a set of changes and we know how to create run objects, we want to setup a study by creating a list of run directories to pass to study.
+
+    #Set the maximum number of cpus to use for these runs 
+    ncpus = 6
+    
+    #Get the folder/file name to store run for each change
+    baserundir = "/path/to/dir/to/store/runs"
+    filenames = changes.filenames(seperator="_")
+    
+    threadlist =[]
+    for thread, change in enumerate(changes):
+         rundir = baserundir + filenames[thread]
+
+         run = swl.LammpsRun(
+                             srcdir,
+                             basedir,
+                             rundir,
+                             executables,
+                             inputfile,
+                             outputfile,
+                             queue='general',
+                             platform="local",
+                             walltime='00:02:00',
+                             inputchanges=change,
+                             finishargs = {},
+                             dryrun=False
+                            )
+         #One run for this thread (i.e. no setup run before main run)
+         runlist = [run]
+         threadlist.append(runlist)
+         print('Run in directory '  + rundir + ' and dryrun is '  + str(run.dryrun))
+
+    # Run the study
+    study = swl.Study(threadlist, ncpus)
