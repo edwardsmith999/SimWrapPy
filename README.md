@@ -25,46 +25,50 @@ The user then specifies changes to this base directory to be made in each of the
 
 Consider the minimal example in the examples folder: minimal_example.py
 
-    #! /usr/bin/env python2.7
-    import sys
-    sys.path.append("../")
-    import simwraplib as swl
+```python
+#! /usr/bin/env python2.7
+import sys
+sys.path.append("../")
+import simwraplib as swl
 
-    # Inputs that are the same for every thread
-    basedir = './minimal_example/'
-    srcdir =  basedir + "src/"
-    executables = 'bin/hello.py'
-    inputfile = 'input/inputfile'
+# Inputs that are the same for every thread
+basedir = './minimal_example/'
+srcdir =  basedir + "src/"
+executables = 'bin/hello.py'
+inputfile = 'input/inputfile'
 
-    #Setup a set of changes for all permutations of two variables
-    inputs1 = swl.InputDict({"variablename": [i for i in range(3)]})
-    inputs2 = swl.InputDict({"othervariablename": [i for i in range(3)]})
-    changes = inputs1 * inputs2
-    filenames = changes.filenames(seperator="_")
+#Setup a set of changes for all permutations of two variables
+inputs1 = swl.InputDict({"variablename": [i for i in range(3)]})
+inputs2 = swl.InputDict({"othervariablename": [i for i in range(3)]})
+changes = inputs1 * inputs2
+filenames = changes.filenames(seperator="_")
 
-    #Loop over all changes and create a run object for each
-    threadlist =[]
-    for thread, change in enumerate(changes):
-         rundir = basedir + '/runs/' + filenames[thread]
-         run = swl.MinimalRun(srcdir, basedir,rundir,
-                              executables,inputfile,
-                              inputchanges=change)
-                              
-         #One run for this thread (i.e. no setup run before main run)
-         runlist = [run]
-         threadlist.append(runlist)
+#Loop over all changes and create a run object for each
+threadlist =[]
+for thread, change in enumerate(changes):
+     rundir = basedir + '/runs/' + filenames[thread]
+     run = swl.MinimalRun(srcdir, basedir,rundir,
+                          executables,inputfile,
+                          inputchanges=change)
 
-    # Number of cpus to use (run in blocks of 4)
-    ncpus = 4
+     #One run for this thread (i.e. no setup run before main run)
+     runlist = [run]
+     threadlist.append(runlist)
 
-    # Run the study
-    study = swl.Study(threadlist, ncpus)
+# Number of cpus to use (run in blocks of 4)
+ncpus = 4
+
+# Run the study
+study = swl.Study(threadlist, ncpus)
+```
 
 The python script in `./minimal_example/bin`, called `hello.py` which reads and prints a file is then run 9 times,
 
-    with open("./input/inputfile") as f:
-        filestr = f.read().split("\n")
-        print("Hello World " + filestr[1] + " " + filestr[3] + "\n")
+```python
+with open("./input/inputfile") as f:
+    filestr = f.read().split("\n")
+    print("Hello World " + filestr[1] + " " + filestr[3] + "\n")
+```
 
 each in a seperate directory under run. The input file `inputfile` from `./minimal_example/input` is asjusted for each case
 
@@ -120,10 +124,12 @@ constructor:
 
 Example usage from a higher level:
 
-    run = Run('../MD/src_code/', etc.)
-    run.setup()
-    run.execute()
-    run.finish()
+```python
+run = Run('../MD/src_code/', etc.)
+run.setup()
+run.execute()
+run.finish()
+```
 
 The most important input for a parameter study is the `inputchanges` which specifies how
 the input file is to be changed before running the code. The next section details how we set this up. 
@@ -135,29 +141,38 @@ A set of utilities for creating parameter studies in a quick and intuitive way.
 
 Specifying the input changes are done as a dictionary with the keywords you'd like to change with the corresponding value as a list of what you'd like to set the simulation input parameters to:
 
-    inputs1 = swl.InputDict({'cells': [[8, 8, 8], [16, 16, 16]]})
-    inputs2 = swl.InputDict({'processors': [1, 1, 1], [2, 2, 2]})
+```python
+inputs1 = swl.InputDict({'cells': [[8, 8, 8], [16, 16, 16]]})
+inputs2 = swl.InputDict({'processors': [1, 1, 1], [2, 2, 2]})
+```
 
 We can then specify the parameter study for corresponding pair by adding
 
-    changes = inputs1 + inputs2
-    
+```python
+changes = inputs1 + inputs2
+```
+
 where `changes` is then a list of paired dictonaries:
 
-    [{'cells': [8, 8, 8], 'processors': [1, 1, 1]},
-     {'cells': [16, 16, 16], 'processors': [2, 2, 2]}]
-     
+```python
+[{'cells': [8, 8, 8], 'processors': [1, 1, 1]},
+ {'cells': [16, 16, 16], 'processors': [2, 2, 2]}]
+```
+
 Alternatively we could multiply to get all permutations,
 
-    changes = inputs1 * inputs2
-    
+```python
+changes = inputs1 * inputs2
+```    
+
 which would give 4 different sets of changes to an input,
 
-    [{'cells': [8, 8, 8], 'processors': [1, 1, 1]},
-     {'cells': [8, 8, 8], 'processors': [2, 2, 2]},
-     {'cells': [16, 16, 16], 'processors': [1, 1, 1]},
-     {'cells': [16, 16, 16], 'processors': [2, 2, 2]}]
-
+```python
+[{'cells': [8, 8, 8], 'processors': [1, 1, 1]},
+ {'cells': [8, 8, 8], 'processors': [2, 2, 2]},
+ {'cells': [16, 16, 16], 'processors': [1, 1, 1]},
+ {'cells': [16, 16, 16], 'processors': [2, 2, 2]}]
+```
 
 ### OpenFOAM input changes
 
@@ -170,17 +185,21 @@ The user can also specify the full
 OpenFOAM format in the slightly cumbersome but completely
 consistent form of nested dicts/lists, for example to set cells
 
-    keyword = "blockMeshDict"
-    keyvals = {"blocks":{"hex":["keep",[8,8,8],"keep","keep"]}}
-    
+```python
+keyword = "blockMeshDict"
+keyvals = {"blocks":{"hex":["keep",[8,8,8],"keep","keep"]}}
+```
+
 where the "keep" keyword says to skip replacing values.
 Also, to set processors, we need to change `numberOfSubdomains` 
 and `simpleCoeffs` in the input file.
 
-    keyword = ["decomposeParDict", "decomposeParDict"]
-    keyvals = [{"numberOfSubdomains":8},
-               {"numberOfSubdomains":{simpleCoeffs:{"n":[2,2,2]}}}]
-               
+```python
+keyword = ["decomposeParDict", "decomposeParDict"]
+keyvals = [{"numberOfSubdomains":8},
+           {"numberOfSubdomains":{simpleCoeffs:{"n":[2,2,2]}}}]
+```
+
  ### LAMMPS input changes
  
 The LAMMPS input file can be adapted as follows:
@@ -235,39 +254,40 @@ where the two values can be changed
 
 Now we have a set of changes and we know how to create run objects, we want to setup a study by creating a list of run directories to pass to study.
 
-    #Set the maximum number of cpus to use for these runs
-    ncpus = 6
-    
-    #Get the folder/file name to store run for each change
-    baserundir = "/path/to/dir/to/store/runs"
-    filenames = changes.filenames(seperator="_")
-    
-    threadlist =[]
-    for thread, change in enumerate(changes):
-         rundir = baserundir + filenames[thread]
+```python
+#Set the maximum number of cpus to use for these runs
+ncpus = 6
 
-         run = swl.LammpsRun(
-                             srcdir,
-                             basedir,
-                             rundir,
-                             executables,
-                             inputfile,
-                             outputfile,
-                             queue='general',
-                             platform="local",
-                             walltime='00:02:00',
-                             inputchanges=change,
-                             finishargs = {},
-                             dryrun=False
-                            )
-         #One run for this thread (i.e. no setup run before main run)
-         runlist = [run]
-         threadlist.append(runlist)
-         print('Run in directory '  + rundir + ' and dryrun is '  + str(run.dryrun))
+#Get the folder/file name to store run for each change
+baserundir = "/path/to/dir/to/store/runs"
+filenames = changes.filenames(seperator="_")
 
-    # Run the study
-    study = swl.Study(threadlist, ncpus)
-    
+threadlist =[]
+for thread, change in enumerate(changes):
+     rundir = baserundir + filenames[thread]
+
+     run = swl.LammpsRun(
+                         srcdir,
+                         basedir,
+                         rundir,
+                         executables,
+                         inputfile,
+                         outputfile,
+                         queue='general',
+                         platform="local",
+                         walltime='00:02:00',
+                         inputchanges=change,
+                         finishargs = {},
+                         dryrun=False
+                        )
+     #One run for this thread (i.e. no setup run before main run)
+     runlist = [run]
+     threadlist.append(runlist)
+     print('Run in directory '  + rundir + ' and dryrun is '  + str(run.dryrun))
+
+# Run the study
+study = swl.Study(threadlist, ncpus)
+```
 
 
 
