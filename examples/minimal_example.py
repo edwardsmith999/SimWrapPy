@@ -10,9 +10,8 @@ basedir = './minimal_example/'
 srcdir =  basedir + "src/"
 executables = 'bin/hello.py'
 inputfile = 'input/inputfile'
-outputfile = 'lammps.out'
-finish = [{'final_state':'final_state'}]
 
+#Setup a set of changes for all permutations of two variables
 inputs1 = swl.InputDict({"variablename": [i for i in range(3)]})
 inputs2 = swl.InputDict({"othervariablename": [i for i in range(3)]})
 
