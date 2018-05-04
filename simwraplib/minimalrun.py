@@ -30,7 +30,7 @@ class MinimalRun(Run):
                                          dryrun=dryrun)
 
         # Set input modifier to be normal kind
-        self.inputmod = MDInputMod
+        self.inputmod = KeywordInputMod
 
     def prepare_cmd_arguments(self, fdir=''):
         self.cmd_args = ''

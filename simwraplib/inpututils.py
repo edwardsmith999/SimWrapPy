@@ -53,6 +53,31 @@ def reverse_readline(filename, buf_size=8192):
         if segment is not None:
             yield segment
 
+
+def check_replace_line(line, keyword, keyvals):
+
+    l = line.strip().replace("\t","")
+    ls = " ".join(l.split())
+    kw = " ".join(keyword.split())
+    if kw in ls:
+        indx = ls.find(kw)
+        if  indx == 0:
+            #Replace line which contains keyword with values
+            nl = keyword + "   "
+        else:
+            nl = ls[:indx] + " " + keyword + " "
+        if type(keyvals) is list:
+            nl += " ".join([str(v) for v in keyvals])
+        elif type(keyvals) is str:
+            nl += keyvals
+        elif type(keyvals) in (int, float):
+            nl += str(keyvals)
+        else:
+            raise TypeError("Unsupported keyvals type ", type(keyvals))
+        return nl+"\n"
+    else:
+        return line
+
 class InputMod(object):
 
     def __init__(self, filename):
@@ -60,6 +85,33 @@ class InputMod(object):
     
     def replace_input(self, keyword, keyvals):    
         raise NotImplementedError
+
+class ScriptMod(object):
+
+    def __init__(self, filename):
+        self.filename = filename
+    
+    def replace_input(self, keyword, keyvals):    
+       
+        replacefile = self.filename + ".new"
+        sh.copy(self.filename, self.filename+".bak")
+        with open(replacefile,'w') as new_file:
+            with open(self.filename) as old_file:
+                if type(keyword) is int:
+                    #Replace line number in Python script
+                    for no, line in enumerate(old_file):
+                        if no == keyword:
+                            new_file.write(keyvals+"\n")
+                        else:
+                            new_file.write(line)
+                elif type(keyword) is str:
+                    for line in old_file:
+                        l = check_replace_line(line, keyword, keyvals)
+                        new_file.write(l)
+
+        #Replace original file
+        sh.copy(replacefile, self.filename)
+
 
 
 class KeywordInputMod(InputMod):
@@ -208,6 +260,9 @@ class OpenFOAMInputMod(InputMod):
         """ 
             Replace OpenFOAM
 
+            A few shortcut keywords and a comprehensive underlying 
+            way of exploring changing of inputs.
+
             Currently support  'cell', 'domainsize', 
             'origin' and 'process' keywords with list of three
             values for each. The user can also specify the full
@@ -334,27 +389,30 @@ class LineInputMod(InputMod):
         with open(replacefile,'w') as new_file:
             with open(self.filename) as old_file:
                 for line in old_file:
-                    l = line.strip().replace("\t","")
-                    ls = " ".join(l.split())
-                    kw = " ".join(keyword.split())
-                    if kw in ls:
-                        indx = ls.find(kw)
-                        if  indx == 0:
-                            #Replace line which contains keyword with values
-                            nl = keyword + "   "
-                        else:
-                            nl = ls[:indx] + " " + keyword + " "
-                        if type(keyvals) is list:
-                            nl += " ".join([str(v) for v in keyvals])
-                        elif type(keyvals) is str:
-                            nl += keyvals
-                        elif type(keyvals) in (int, float):
-                            nl += str(keyvals)
-                        else:
-                            raise TypeError("Unsupported keyvals type ", type(keyvals))
-                        new_file.write(nl+"\n")
-                    else:
-                        new_file.write(line)
+                    l = check_replace_line(line, keyword, keyvals)
+                    new_file.write(l)
+
+#                    l = line.strip().replace("\t","")
+#                    ls = " ".join(l.split())
+#                    kw = " ".join(keyword.split())
+#                    if kw in ls:
+#                        indx = ls.find(kw)
+#                        if  indx == 0:
+#                            #Replace line which contains keyword with values
+#                            nl = keyword + "   "
+#                        else:
+#                            nl = ls[:indx] + " " + keyword + " "
+#                        if type(keyvals) is list:
+#                            nl += " ".join([str(v) for v in keyvals])
+#                        elif type(keyvals) is str:
+#                            nl += keyvals
+#                        elif type(keyvals) in (int, float):
+#                            nl += str(keyvals)
+#                        else:
+#                            raise TypeError("Unsupported keyvals type ", type(keyvals))
+#                        new_file.write(nl+"\n")
+#                    else:
+#                        new_file.write(line)
 
         #Replace original file
         sh.copy(replacefile, self.filename)

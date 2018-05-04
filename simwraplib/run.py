@@ -93,27 +93,33 @@ class Run(object):
                  dryrun=True,
                  deleteoutput=False):
 
-        if (srcdir is None):
-            raise IOError(srcdir + " not specified")
         if (basedir is None):
-            raise IOError(basedir + " not specified")
+            self.basedir = ""
+        else:
+            if (basedir[-1] != '/'): 
+                self.basedir += '/'
+           #Check base directory exists
+            if os.path.isdir(basedir):
+                self.basedir = basedir
+            else:
+                raise IOError("Path "+basedir+" not found")
+
+        #Check src directory exists
+        if (srcdir is not None):
+            if (srcdir[-1] != '/'): self.srcdir += '/'
+            if os.path.isdir(srcdir):
+                self.srcdir = srcdir
+            else:
+                raise IOError("Path "+srcdir+" not found")
+        else:
+            self.srcdir = None
+
         if (rundir is None):
             raise IOError(rundir + " not specified")
 
-        #Check src directory exists
-        if os.path.isdir(srcdir):
-            self.srcdir = srcdir
-        else:
-            raise IOError("Path "+srcdir+" not found")
-
-        #Check base directory exists
-        if os.path.isdir(basedir):
-            self.basedir = basedir
-        else:
-            raise IOError("Path "+basedir+" not found")
-
         #Check rundir exists and make if not
         self.rundir = rundir
+        if (self.rundir[-1] != '/'): self.rundir += '/'
         try:
             os.makedirs(rundir)
         except OSError as e:
@@ -125,55 +131,63 @@ class Run(object):
             self.executable = executable
             for e in executable:
                 if (type(e) is str):
-                    if os.path.isfile(basedir+e):
-                        raise IOError("Executable "+basedir+executable+" not found")
+                    if os.path.isfile(self.basedir+e):
+                        raise IOError("Executable "+self.basedir+executable+" not found")
         else:
-            if os.path.isfile(basedir+executable):
+            if os.path.isfile(self.basedir+executable):
                 self.executable = executable
             else:
                 #Try to build exectuable
-                print("Executable "+basedir+executable+" not found, trying to build")
+                print("Executable "+self.basedir+executable+" not found, trying to build")
                 self.build_executable()
-                if not os.path.isfile(basedir+executable):
-                    raise IOError("Executable "+basedir+executable+" not found")
+                if not os.path.isfile(self.basedir+executable):
+                    raise IOError("Executable "+self.basedir+executable+" not found")
 
         #Check inputfile specified exist in basedir
-        if os.path.isfile(basedir+inputfile):
-            self.inputfile = inputfile
-        else:
-            #Check if folder
-            if os.path.isdir(basedir+inputfile):
+        if inputfile is not None:
+            if os.path.isfile(self.basedir+inputfile):
                 self.inputfile = inputfile
             else:
-                raise IOError("inputfile "+basedir+inputfile+" not found")
+                #Check if folder
+                if os.path.isdir(self.basedir+inputfile):
+                    self.inputfile = inputfile
+                else:
+                    raise IOError("inputfile "+self.basedir+inputfile+" not found")
+        else:
+            #If input file is not defined, set to executable
+            self.inputfile = None
 
         #Output file
         self.outputfile = outputfile
 
         #Dictonary of values to change in input file
-        self.inputchanges = inputchanges
+        print(inputchanges)
+        if type(inputchanges) is dict:
+            self.inputchanges = inputchanges
+        else:
+            raise OSError("Input changes must be a dictonary of changes for a single RUN ONLY")
 
         # Check initstate and restartfile are not both specified
         if (initstate != None and restartfile != None):
             raise IOError('Error: both initial state and restart files are not None')
         #Check initstate or restartfile specified exist in basedir
         elif (initstate != None):
-            if os.path.isfile(basedir+initstate):
+            if os.path.isfile(self.basedir+initstate):
                 self.initstate = initstate
             else:
-                raise IOError("initstate "+basedir+initstate+" not found")
+                raise IOError("initstate "+self.basedir+initstate+" not found")
         elif (restartfile != None):
-            if os.path.isfile(basedir+restartfile):
+            if os.path.isfile(self.basedir+restartfile):
                 self.restartfile = initrestartfilestate
             else:
-                raise IOError("restartfile "+basedir+restartfile+" not found")
+                raise IOError("restartfile "+self.basedir+restartfile+" not found")
         else:
             self.startfile = None
 
         if (extrafiles):
             for f in extrafiles:
-                if not os.path.isfile(basedir+f):
-                    raise IOError("extrafile "+basedir+f+" not found")
+                if not os.path.isfile(self.basedir+f):
+                    raise IOError("extrafile "+self.basedir+f+" not found")
 
         #Other arguments
         self.extrafiles = extrafiles
@@ -181,15 +195,9 @@ class Run(object):
         self.dryrun = dryrun
         self.deleteoutput = deleteoutput
 
-        # Add slashes to end of folders if they aren't already there
-        if (self.srcdir[-1] != '/'): self.srcdir += '/'
-        if (self.rundir[-1] != '/'): self.rundir += '/'
-        if (self.basedir[-1] != '/'): self.basedir += '/'
-#        if (self.executable[0:2] != './'): 
-#            self.executable = './' + self.executable
-
         # Keep a list of files to iterate over later
-        self.copyfiles = [executable, inputfile]
+        self.copyfiles = [executable]
+        if (inputfile): self.copyfiles.append(inputfile)
         if (initstate): self.copyfiles.append(initstate)
         if (extrafiles): self.copyfiles += extrafiles
 
@@ -228,14 +236,20 @@ class Run(object):
             #Call build and wait until build has finished 
             #before returning control to caller
             split_cmdstg = shlex.split(cmdstg)
-            self.build = sp.Popen(split_cmdstg, cwd=self.srcdir)      
-            self.build.wait()
-
+            if self.srcdir != None:
+                self.build = sp.Popen(split_cmdstg, cwd=self.srcdir)      
+                self.build.wait()
+            else:
+                raise OSError("src directory not specified, cannot build")
         except:
             print("Build Failed, try building manually before running simwraplib")
             raise
 
     def copyfile(self, f):
+
+        print(f, self.basedir+f, self.rundir+f)
+        if f is None:
+            return
 
         if (type(f) is list):
             for i in f:
@@ -256,20 +270,19 @@ class Run(object):
                 raise OSError("Error copying folder base = " + self.basedir+f
                                 + " to run = " + self.rundir+f)
 
-        #Otherwise copy a file
+        #Otherwise copy a file (and maybe create base directory
         else:
+            if not os.path.exists(os.path.dirname(self.rundir+f)):
+                try:
+                    os.makedirs(os.path.dirname(self.rundir+f))
+                except OSError as exc: # Guard against race condition
+                    if exc.errno != errno.EEXIST:
+                        raise
             try:
                 sh.copy(self.basedir+f, self.rundir+f)
-            except IOError:
-                try:
-                    for d in reversed(f.split("/")[:-1]):
-                        sh.copytree(self.basedir+d, self.rundir+d)
-                except OSError:
-                    raise OSError("Error copying file = " + self.basedir+d
-                                        + " to run dir = " + self.rundir)
-#                raise IOError("Error copying file = " + self.basedir+f
-#                                    + " to run dir = " + self.rundir)
-
+            except OSError:
+                raise OSError("Error copying file = " + self.basedir+d
+                                    + " to run dir = " + self.rundir)
     
     def setup(self, existscheck=False):
 
@@ -277,16 +290,16 @@ class Run(object):
         self.create_rundir(existscheck=existscheck)
 
         # Make a snapshot of the source code and store in a tarball
-        cmd = 'tar -cPf ' + self.rundir + 'src.tar ' + self.srcdir
-        print(cmd)
-        sp.Popen(cmd, shell=True)
+        if self.srcdir != None:
+            cmd = 'tar -cPf ' + self.rundir + 'src.tar ' + self.srcdir
+            sp.Popen(cmd, shell=True)
 
         # Copy files and save new locations to instance variables
         for f in self.copyfiles:
+            print("Files = ", f)
             self.copyfile(f)
 
             #print("Files = ", self.basedir+f, self.rundir+f)
-
 
         # Make changes to the input file once it has been copied
         self.prepare_inputs()
@@ -310,6 +323,7 @@ class Run(object):
             self.inputchanges.update(extrachanges)
 
         for key in self.inputchanges:
+            print(key)
             values = self.inputchanges[key]
             mod.replace_input(key, values)    
         

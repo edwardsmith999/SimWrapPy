@@ -65,7 +65,7 @@ for thread in range(len(foamthreads)):
                      queue='ecse0803',
                      platform="local",
                      walltime='00:10:00',
-                     inputchanges=[],
+                     inputchanges={},
                      finishargs = {},
                      dryrun=False
                      )

@@ -1,11 +1,6 @@
 #! /usr/bin/env python2.7
 import numpy as np
-import matplotlib.pyplot as plt
-import string
-import itertools
 import sys
-import multiprocessing
-
 sys.path.append('../')
 import simwraplib as swl
 
