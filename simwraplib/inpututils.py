@@ -70,7 +70,7 @@ def check_replace_line(line, keyword, keyvals):
             nl += " ".join([str(v) for v in keyvals])
         elif type(keyvals) is str:
             nl += keyvals
-        elif type(keyvals) in (int, float):
+        elif type(keyvals) in (int, float, np.float64):
             nl += str(keyvals)
         else:
             raise TypeError("Unsupported keyvals type ", type(keyvals))

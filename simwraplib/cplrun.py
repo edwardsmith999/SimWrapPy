@@ -3,6 +3,7 @@ import os
 import shutil as sh
 import subprocess as sp
 
+from simwraplib.scriptrun import ScriptRun
 from simwraplib.run import Run
 from simwraplib.inpututils import InputMod
 from simwraplib.platform import get_platform
@@ -58,9 +59,13 @@ class CPLRun(Run):
 
         assert type(executable) is list
         assert len(executable) is 2
+
         #This will need to be generalised to an MD/CFD run baseclass
-        assert type(executable[0]) is LammpsRun or type(executable[0]) is MDRun 
-        assert type(executable[1]) is OpenFOAMRun
+        assert (type(executable[0]) is LammpsRun or 
+                type(executable[0]) is MDRun or 
+                type(executable[1]) is ScriptRun)
+        assert (type(executable[1]) is OpenFOAMRun or 
+                type(executable[1]) is ScriptRun)
 
         self.mdrun = executable[0]
         self.cfdrun = executable[1]
@@ -123,6 +128,8 @@ class CPLRun(Run):
     def setup(self):
 
         # Create dir and copy coupler input file
+        super(CPLRun, self).setup()
+
         self.create_rundir()
         self.copyfile(self.inputfile)
 

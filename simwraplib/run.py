@@ -96,6 +96,7 @@ class Run(object):
         if (basedir is None):
             self.basedir = ""
         else:
+            self.basedir = basedir
             if (basedir[-1] != '/'): 
                 self.basedir += '/'
            #Check base directory exists
@@ -134,6 +135,7 @@ class Run(object):
                     if os.path.isfile(self.basedir+e):
                         raise IOError("Executable "+self.basedir+executable+" not found")
         else:
+            print(self.basedir+executable)
             if os.path.isfile(self.basedir+executable):
                 self.executable = executable
             else:
@@ -173,18 +175,20 @@ class Run(object):
         #Check initstate or restartfile specified exist in basedir
         elif (initstate != None):
             if os.path.isfile(self.basedir+initstate):
-                self.initstate = initstate
+                self.startfile = initstate
             else:
                 raise IOError("initstate "+self.basedir+initstate+" not found")
         elif (restartfile != None):
             if os.path.isfile(self.basedir+restartfile):
-                self.restartfile = initrestartfilestate
+                self.startfile = restartfile
             else:
                 raise IOError("restartfile "+self.basedir+restartfile+" not found")
         else:
             self.startfile = None
 
         if (extrafiles):
+            if type(extrafiles) is str:
+                extrafiles = [extrafiles]
             for f in extrafiles:
                 if not os.path.isfile(self.basedir+f):
                     raise IOError("extrafile "+self.basedir+f+" not found")
@@ -196,9 +200,12 @@ class Run(object):
         self.deleteoutput = deleteoutput
 
         # Keep a list of files to iterate over later
-        self.copyfiles = [executable]
+        if type(executable) is str:
+            self.copyfiles = [executable]
+        else:
+            self.copyfiles = []
         if (inputfile): self.copyfiles.append(inputfile)
-        if (initstate): self.copyfiles.append(initstate)
+        if (self.startfile): self.copyfiles.append(self.startfile)
         if (extrafiles): self.copyfiles += extrafiles
 
         # Work out what machine we're on
@@ -247,7 +254,6 @@ class Run(object):
 
     def copyfile(self, f):
 
-        print(f, self.basedir+f, self.rundir+f)
         if f is None:
             return
 
@@ -257,7 +263,8 @@ class Run(object):
             return
 
         # Do nothing if the files are the same
-        if (self.basedir+f == self.rundir+f):
+        if sh._samefile(self.basedir+f, self.rundir+f):
+        #if (self.basedir+f == self.rundir+f):
             return
 
         #Copy input folder if it is a directory
@@ -296,7 +303,6 @@ class Run(object):
 
         # Copy files and save new locations to instance variables
         for f in self.copyfiles:
-            print("Files = ", f)
             self.copyfile(f)
 
             #print("Files = ", self.basedir+f, self.rundir+f)

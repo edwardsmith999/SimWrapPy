@@ -132,10 +132,11 @@ cd $PBS_O_WORKDIR
 
         #Add restart to first line of input file
         if self.startfile != None:
-            with open(self.rundir+self.inputfile, 'r+') as f:
-                content = f.read()
-                f.seek(0, 0)
-                f.write("read_restart " + self.startfile + "\n")
+            mod = self.inputmod(self.rundir+self.inputfile)
+            mod.replace_input("read_data", self.rundir+self.startfile)
+#                content = f.read()
+#                f.seek(0, 0)
+#                f.write("read_restart " + self.startfile + "\n")
 
         return self.cmd_args
 
