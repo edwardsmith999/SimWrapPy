@@ -74,9 +74,9 @@ def check_replace_line(line, keyword, keyvals):
             nl += str(keyvals)
         else:
             raise TypeError("Unsupported keyvals type ", type(keyvals))
-        return nl+"\n"
+        return nl+"\n", True
     else:
-        return line
+        return line, False
 
 class InputMod(object):
 
@@ -92,21 +92,27 @@ class ScriptMod(object):
         self.filename = filename
     
     def replace_input(self, keyword, keyvals):    
-       
+
+        #We only want to replace at most one time
+        found = False
         replacefile = self.filename + ".new"
         sh.copy(self.filename, self.filename+".bak")
         with open(replacefile,'w') as new_file:
             with open(self.filename) as old_file:
                 if type(keyword) is int:
                     #Replace line number in Python script
+                    #We add one as line numbers start from one
                     for no, line in enumerate(old_file):
-                        if no == keyword:
+                        if no+1 == keyword:
                             new_file.write(keyvals+"\n")
                         else:
                             new_file.write(line)
                 elif type(keyword) is str:
-                    for line in old_file:
-                        l = check_replace_line(line, keyword, keyvals)
+                    for line in old_file:                      
+                        if not found:
+                            l, found = check_replace_line(line, keyword, keyvals)
+                        else:
+                            l = line
                         new_file.write(l)
 
         #Replace original file
@@ -389,30 +395,8 @@ class LineInputMod(InputMod):
         with open(replacefile,'w') as new_file:
             with open(self.filename) as old_file:
                 for line in old_file:
-                    l = check_replace_line(line, keyword, keyvals)
+                    l, found = check_replace_line(line, keyword, keyvals)
                     new_file.write(l)
-
-#                    l = line.strip().replace("\t","")
-#                    ls = " ".join(l.split())
-#                    kw = " ".join(keyword.split())
-#                    if kw in ls:
-#                        indx = ls.find(kw)
-#                        if  indx == 0:
-#                            #Replace line which contains keyword with values
-#                            nl = keyword + "   "
-#                        else:
-#                            nl = ls[:indx] + " " + keyword + " "
-#                        if type(keyvals) is list:
-#                            nl += " ".join([str(v) for v in keyvals])
-#                        elif type(keyvals) is str:
-#                            nl += keyvals
-#                        elif type(keyvals) in (int, float):
-#                            nl += str(keyvals)
-#                        else:
-#                            raise TypeError("Unsupported keyvals type ", type(keyvals))
-#                        new_file.write(nl+"\n")
-#                    else:
-#                        new_file.write(line)
 
         #Replace original file
         sh.copy(replacefile, self.filename)

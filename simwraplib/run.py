@@ -1,3 +1,4 @@
+from __future__ import print_function # Only Python 2.x
 import os
 import errno
 import shutil as sh
@@ -436,7 +437,7 @@ class Run(object):
 
         return cmd
 
-    def execute(self, blocking=False, nprocs=0):
+    def execute(self, blocking=False, nprocs=0, print_output=False):
 
         """
             Wrapper for execute_cx1, execute_local, and archer.
@@ -446,7 +447,8 @@ class Run(object):
         if ("cx" in self.platform or "archer" in self.platform):
             self.execute_pbs(blocking=blocking)
         else:
-            self.execute_local(blocking=blocking, nprocs=nprocs)
+            self.execute_local(blocking=blocking, nprocs=nprocs, 
+                               print_output=print_output)
 
 
     def execute_pbs(self, blocking=False):
@@ -465,9 +467,14 @@ class Run(object):
 
         # Submit the job
         job.submit(blocking=blocking, dryrun=self.dryrun)
+
+    def output_generator(self, proc):
+        for stdout_line in iter(proc.stdout.readline, ""):
+            yield stdout_line 
+        proc.stdout.close()
     
         
-    def execute_local(self, blocking=False, nprocs=0):
+    def execute_local(self, blocking=False, nprocs=0, print_output=False):
 
         """
             Runs an executable from the directory specified  
@@ -489,17 +496,30 @@ class Run(object):
             print('DRYRUN -- no execution in ' + self.rundir + ' \nRun would be: ' + cmd)
         else:
             print(self.rundir + '    :    ' + cmd)
-            fstout = open(stdoutfile,'w')
-            fsterr = open(stderrfile,'w')
             split_cmdstg = shlex.split(cmd)
 
-            #Execute subprocess and create subprocess object
-            self.proc = sp.Popen(split_cmdstg, cwd=self.rundir, stdin=None, 
-                                 stdout=fstout, stderr=fsterr)
+            if print_output:
+                self.proc = sp.Popen(split_cmdstg, cwd=self.rundir, stdin=None, 
+                                     stdout=sp.PIPE, stderr=sp.STDOUT, 
+                                     universal_newlines=True)
+                for stdout_line in iter(self.proc.stdout.readline, ""):
+                    print(stdout_line.replace("\n",""))
+                self.proc.stdout.close()
+
+            else:
+                #Output is piped to files
+                fstout = open(stdoutfile,'w')
+                fsterr = open(stderrfile,'w')
+
+                #Execute subprocess and create subprocess object
+                self.proc = sp.Popen(split_cmdstg, cwd=self.rundir, stdin=None, 
+                                     stdout=fstout, stderr=fsterr)
 
             #If blocking, wait here
             if blocking:
-                self.proc.wait()
+                return_code = self.proc.wait()
+            if return_code:
+                raise sp.CalledProcessError(return_code, cmd)
 
         return
 
