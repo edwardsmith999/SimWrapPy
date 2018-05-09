@@ -10,6 +10,12 @@ import simwraplib.userconfirm as uc
 from simwraplib.platform import get_platform
 from simwraplib.hpc import PBSJob
 
+def get_subprocess_error(e):
+    print("subprocess ERROR")
+    import json
+    error = json.loads(e[7:])
+    print(error['code'], error['message'])
+
 
 def inheritdocstring(name, bases, attrs):
     if not '__doc__' in attrs:
@@ -518,8 +524,16 @@ class Run(object):
             #If blocking, wait here
             if blocking:
                 return_code = self.proc.wait()
+
+            if not print_output:
+                fstout.close()
+                fsterr.close()
+
             if return_code:
-                raise sp.CalledProcessError(return_code, cmd)
+                if not print_output:
+                    with open(stderrfile, "r") as f:
+                        error = f.read()
+                raise sp.CalledProcessError(return_code, cmd + "\n" + error)
 
         return
 
