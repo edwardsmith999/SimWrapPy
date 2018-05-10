@@ -509,7 +509,8 @@ class Run(object):
                                      stdout=sp.PIPE, stderr=sp.STDOUT, 
                                      universal_newlines=True)
                 for stdout_line in iter(self.proc.stdout.readline, ""):
-                    print(stdout_line.replace("\n",""))
+                    lastline = stdout_line.replace("\n","")
+                    print(lastline)
                 self.proc.stdout.close()
 
             else:
@@ -533,7 +534,9 @@ class Run(object):
                 if not print_output:
                     with open(stderrfile, "r") as f:
                         error = f.read()
-                raise sp.CalledProcessError(return_code, cmd + "\n" + error)
+                    raise sp.CalledProcessError(return_code, cmd + "\n" + error)
+                else:
+                    raise sp.CalledProcessError(return_code, cmd)
 
         return
 
