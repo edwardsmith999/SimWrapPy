@@ -197,7 +197,7 @@ class CPLRun(Run):
 
         if self.mpiexec == "cplexec":
             cmd = (self.mpiexec + " -m " + str(self.mdprocs) + " '"+md+"' "
-                              + " -c " + str(self.cfdprocs) + " '"+cfd+"' ")
+                              + " -c " + str(self.cfdprocs) + " '"+cfd+"' -vM")
         else:
             if self.cmd_includes_procs():
                 cmd = (self.mpiexec + " -n " + str(self.mdprocs)  + " "  + md 

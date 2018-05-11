@@ -187,6 +187,7 @@ class KeywordInputMod(InputMod):
         
         if ( found == False ):
 
+            print(keyword, keyvals)
             with open(self.filename,'a') as f:
                 f.write(keyword+'\n')
                 for keyval in keyvals:

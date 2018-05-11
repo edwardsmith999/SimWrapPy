@@ -8,10 +8,20 @@ import string
 
 import simwraplib.userconfirm as uc
 from simwraplib.platform import get_platform
-from simwraplib.inpututils import InputMod
+from simwraplib.inpututils import MDInputMod
 from simwraplib.hpc import PBSJob
 from simwraplib.gnuplotutils import GnuplotUtils
 from simwraplib.run import Run, inheritdocstring
+
+
+def mkdir_p(path):
+    try:
+        os.makedirs(path)
+    except OSError as exc:  # Python >2.5
+        if exc.errno == errno.EEXIST and os.path.isdir(path):
+            pass
+        else:
+            raise
 
 class MDRun(Run):
 
@@ -67,7 +77,7 @@ class MDRun(Run):
                 raise IOError("No such file or directory: " +  basedir+inputfile)
 
         # Set input modifier to be normal kind
-        self.inputmod = InputMod
+        self.inputmod = MDInputMod
 
     def build_executable(self, debug=False, platform="intel"):
 
@@ -138,6 +148,8 @@ class MDRun(Run):
         # Make changes to the input file once it has been copied
         self.prepare_inputs()
 
+        mkdir_p(self.rundir+"./results")
+
     def get_nprocs(self):
 
         with open(self.rundir+self.inputfile,'r') as f:
@@ -154,10 +166,8 @@ class MDRun(Run):
     def prepare_cmd_arguments(self, fdir=''):
 
         self.cmd_args = ' -i ' + fdir + self.inputfile
-        if self.initstate != None:
-            self.cmd_args += ' -r ' + fdir + self.initstate
-        elif self.restartfile != None:
-            self.cmd_args += ' -r ' + fdir + self.restartfile 
+        if self.startfile != None:
+            self.cmd_args += ' -r ' + fdir + self.startfile
 
         return self.cmd_args
 
