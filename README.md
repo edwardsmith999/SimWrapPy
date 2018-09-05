@@ -182,8 +182,10 @@ construction) that will be copied into the run directory.
 
 The input "changes" should be a dictionary of the form:
 
+```python
 changes={'cell':[8,8,8], 'domainsize':[1.,10.,2.], 'origin' : [0.,0.,0.]
 'process':[1,1,1]}
+```
 
 Currently support for  `cell`, `domainsize`,
 `origin` and `process` keywords with list of three
@@ -194,10 +196,10 @@ consistent with OpenFOAM, using nested dicts/lists based on the level
 of nesting in the input files, for example to set cells which is in the
 blockMeshDict input file as:
 ```c++
-    blocks
-    (
-        hex (0 1 2 3 4 5 6 7) (160 40 40) simpleGrading (1 1 1)
-    );
+blocks
+(
+    hex (0 1 2 3 4 5 6 7) (160 40 40) simpleGrading (1 1 1)
+);
 ```
 with the following dictonary
 
@@ -216,16 +218,17 @@ To set processors, we need to change `numberOfSubdomains`
 and `simpleCoeffs` in the decomposeParDict input file, which is in
 the format,
 
-    numberOfSubdomains    48;
+```c++
+numberOfSubdomains    48;
 
-    ...
+...
 
-    simpleCoeffs
-    {
-        n               (4 3 4);
-        delta           0.001;
-    }
-
+simpleCoeffs
+{
+    n               (4 3 4);
+    delta           0.001;
+}
+```
 
 We need to change the file in two places, so we have the change dictonary key
 as a list of the same filename twice 
@@ -233,9 +236,67 @@ as a list of the same filename twice
 ```python
 keyword = ["decomposeParDict", "decomposeParDict"]
 keyvals = [{"numberOfSubdomains":8}, 
-           {"numberOfSubdomains":{simpleCoeffs:{"n":[2,2,2]}}}]
-changes = {keyword : keyvals]
+           {"numberOfSubdomains":{"simpleCoeffs":{"n":[2,2,2]}}}]
+changes = dict(zip(keyword, keyvals))
 ```
+which is just a single "decomposeParDict" key with a list of arguments to change in this file. 
+
+For changing field values and boundary conditions, this becomes a little more cumbersome,
+as we have a number of entries for the boundaryField and they all have to be told to keep,
+
+```c++
+	top
+	{
+		type fixedValue;
+		value uniform (1 0 0);
+	}
+	
+	bottom
+	{
+		type fixedValue;
+		value uniform (0 0 0);
+	}
+	
+	streamwiseIn
+	{
+		type cyclic;
+		neighbourPatch streamwiseOut;
+	}
+	
+	streamwiseOut
+	{
+		type cyclic;
+		neighbourPatch streamwiseIn;
+	}
+	
+	front
+	{
+		type cyclic;
+		neighbourPatch back;
+	}
+	
+	back
+	{
+		type cyclic;
+		neighbourPatch front;
+	}
+
+```
+
+so the python changes for this are as follows,
+
+```python
+wallvel = 0.5
+keyvals = {"boundaryField":{"top":{"type":"fixedValue", "value":[[wallvel,0,0]]}, 
+                            "bottom":{"type":"keep", "value":"keep"},
+                            "streamwiseIn":{"type":"keep", "neighbourPatch":"keep"},
+                            "streamwiseOut":{"type":"keep", "neighbourPatch":"keep"},
+                            "front":{"type":"keep", "neighbourPatch":"keep"},
+                            "back":{"type":"keep", "neighbourPatch":"keep"}}}
+changes = {"Ub":keyvals}
+```
+which requires us to know at each level the form of the boundaries and to specify that they stay the same.
+
 
 In order to explore the avaliable inputs in OpenFOAM, we can use the lower
 level interface to openfoam_HeaderData in simwraplib inpututils through 
