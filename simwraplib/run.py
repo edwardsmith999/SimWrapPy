@@ -142,7 +142,7 @@ class Run(object):
                     if os.path.isfile(self.basedir+e):
                         raise IOError("Executable "+self.basedir+executable+" not found")
         else:
-            print(self.basedir+executable)
+            #print(self.basedir+executable)
             if os.path.isfile(self.basedir+executable):
                 self.executable = executable
             else:
@@ -426,7 +426,7 @@ class Run(object):
     def get_nprocs(self, *args, **kwargs):  
         raise NotImplementedError
 
-    def prepare_cmd_string(self, executable, nprocs):
+    def prepare_cmd_string(self, executable, nprocs, extra_cmds=""):
 
         self.mpiexec = self.prepare_mpiexec()
         cmd_args = self.prepare_cmd_arguments()
@@ -437,13 +437,16 @@ class Run(object):
 
         if self.cmd_includes_procs():
             cmd = (self.mpiexec + " -n " + str(nprocs) 
-                   + " "  + executable + " " + cmd_args)
+                   + " "  + executable + " " + cmd_args
+                   + " " + extra_cmds)
         else:
-            cmd = self.mpiexec + " " + executable + " " + cmd_args
+            cmd = (self.mpiexec + " " + executable 
+                   + " " + cmd_args + " " + extra_cmds)
 
         return cmd
 
-    def execute(self, blocking=False, nprocs=0, print_output=False):
+    def execute(self, blocking=False, nprocs=0, 
+                print_output=False, extra_cmds=""):
 
         """
             Wrapper for execute_cx1, execute_local, and archer.
@@ -451,13 +454,14 @@ class Run(object):
         """
 
         if ("cx" in self.platform or "archer" in self.platform):
-            self.execute_pbs(blocking=blocking)
+            self.execute_pbs(blocking=blocking, extra_cmds=extra_cmds)
         else:
             self.execute_local(blocking=blocking, nprocs=nprocs, 
-                               print_output=print_output)
+                               print_output=print_output,
+                               extra_cmds=extra_cmds)
 
 
-    def execute_pbs(self, blocking=False):
+    def execute_pbs(self, blocking=False, extra_cmds=""):
 
         """
             Submits a job from the directory specified  
@@ -465,7 +469,8 @@ class Run(object):
 
         """ 
         nprocs = self.get_nprocs()
-        cmd = self.prepare_cmd_string(self.executable, nprocs)
+        cmd = self.prepare_cmd_string(self.executable, nprocs,
+                                      extra_cmds=extra_cmds)
 
         job = PBSJob(self.rundir, self.jobname, nprocs, self.walltime, 
                     cmd, self.platform, queue=self.queue, 
@@ -480,7 +485,8 @@ class Run(object):
         proc.stdout.close()
     
         
-    def execute_local(self, blocking=False, nprocs=0, print_output=False):
+    def execute_local(self, blocking=False, nprocs=0, 
+                      print_output=False, extra_cmds=""):
 
         """
             Runs an executable from the directory specified  
@@ -492,7 +498,8 @@ class Run(object):
         if nprocs==0:
             nprocs = self.get_nprocs()
 
-        cmd = self.prepare_cmd_string(self.executable, nprocs)
+        cmd = self.prepare_cmd_string(self.executable, nprocs,
+                                      extra_cmds=extra_cmds)
 
         #Setup standard out and standard error files
         stdoutfile = self.rundir+self.outputfile
@@ -504,14 +511,40 @@ class Run(object):
             print(self.rundir + '    :    ' + cmd)
             split_cmdstg = shlex.split(cmd)
 
-            if print_output:
+            if print_output == True:
                 self.proc = sp.Popen(split_cmdstg, cwd=self.rundir, stdin=None, 
                                      stdout=sp.PIPE, stderr=sp.STDOUT, 
                                      universal_newlines=True)
                 for stdout_line in iter(self.proc.stdout.readline, ""):
                     lastline = stdout_line.replace("\n","")
-                    print(lastline)
+                    if ("AssertionError" in lastline):
+                        raise AssertionError(lastline)
+                    else:
+                        print("Line=",lastline)
+
                 self.proc.stdout.close()
+
+                #If blocking, wait here
+                if blocking:
+                    return_code = self.proc.wait()
+
+            elif print_output == "catch_error":
+                try:
+                    output = sp.check_output(split_cmdstg, cwd=self.rundir, 
+                                             stdin=None, stderr=sp.STDOUT).decode()
+                    success = True 
+                except sp.CalledProcessError as e:
+                    output = e.output.decode()
+                    success = False
+
+                if (success == False):
+                    o = output.split("\n")
+                    for l in o:
+                        if ("AssertionError" in l):
+                            raise AssertionError(l)
+                    return_code = 1
+                else:
+                    return_code = 0
 
             else:
                 #Output is piped to files
@@ -522,11 +555,11 @@ class Run(object):
                 self.proc = sp.Popen(split_cmdstg, cwd=self.rundir, stdin=None, 
                                      stdout=fstout, stderr=fsterr)
 
-            #If blocking, wait here
-            if blocking:
-                return_code = self.proc.wait()
+                #If blocking, wait here
+                if blocking:
+                    return_code = self.proc.wait()
 
-            if not print_output:
+            if print_output == False:
                 fstout.close()
                 fsterr.close()
 

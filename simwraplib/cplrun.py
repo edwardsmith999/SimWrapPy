@@ -63,7 +63,7 @@ class CPLRun(Run):
         #This will need to be generalised to an MD/CFD run baseclass
         assert (type(executable[0]) is LammpsRun or 
                 type(executable[0]) is MDRun or 
-                type(executable[1]) is ScriptRun)
+                type(executable[0]) is ScriptRun)
         assert (type(executable[1]) is OpenFOAMRun or 
                 type(executable[1]) is ScriptRun)
 
@@ -167,7 +167,7 @@ class CPLRun(Run):
 
         return mpiexec
 
-    def prepare_cmd_string(self, executable, nprocs):
+    def prepare_cmd_string(self, executable, nprocs, extra_cmds=""):
 
         assert nprocs == self.mdprocs + self.cfdprocs
         self.mpiexec = self.prepare_mpiexec()
@@ -196,14 +196,17 @@ class CPLRun(Run):
             cfd = cfdrunfile
 
         if self.mpiexec == "cplexec":
+            
             cmd = (self.mpiexec + " -m " + str(self.mdprocs) + " '"+md+"' "
-                              + " -c " + str(self.cfdprocs) + " '"+cfd+"' -vM")
+                                + " -c " + str(self.cfdprocs) + " '"+cfd+"' "
+                                + extra_cmds)
         else:
             if self.cmd_includes_procs():
                 cmd = (self.mpiexec + " -n " + str(self.mdprocs)  + " "  + md 
-                           +  " : " + " -n " + str(self.cfdprocs) + " "  + cfd)
+                           +  " : " + " -n " + str(self.cfdprocs) + " "  + cfd
+                                + extra_cmds)
             else:
-                cmd = self.mpiexec + " " + md + " : " + cfd
+                cmd = self.mpiexec + " " + md + " : " + cfd + extra_cmds
 
         return cmd
 

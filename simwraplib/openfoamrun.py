@@ -166,11 +166,13 @@ cd $PBS_O_WORKDIR
                     delta           0.001;
                 }
 
-            We use two seperate call,
+            We use two seperate call but to the same file,
             keyword = ["decomposeParDict", "decomposeParDict"]
             keyvals = [{"numberOfSubdomains":8}, 
-                       {"numberOfSubdomains":{simpleCoeffs:{"n":[2,2,2]}}}]
-            etc. 
+                       {"numberOfSubdomains":{"simpleCoeffs":{"n":[2,2,2]}}}]
+            changes = dict(zip(keyword, keyvals))
+
+            which ends up being a single dictonary entry for decomposeParDict.
 
             Disclaimer:
             This may not work as expected in all case given how complex

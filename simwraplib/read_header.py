@@ -20,7 +20,7 @@ class openfoam_HeaderData:
         As a result, this is a horrible bit of code below...
     """
 
-    def __init__(self, fdir, readfields=False):
+    def __init__(self, fdir, readfields=True):
 
         if (fdir[-1] != '/'): fdir += '/'
         self.fdir = fdir
@@ -238,20 +238,25 @@ class openfoam_HeaderData:
                 #Split line into list
                 split = line.split()
 
-                #One element means we will go down to another level of nesting
+                #One element means we will go up or down a level of nesting
                 if len(split) == 1:
+                    #Down a level
                     if line == '{':
                         new_file.write(l)
                         Out[prevline] = self.header_change(lines, new_file, ChangeDict[prevline])
+                    #Down a level
                     elif line == '(':
                         new_file.write(l)
                         Out[prevline] = self.header_change(lines, new_file, ChangeDict[prevline])
+                    #Up a level
                     elif line == ');':
                         new_file.write(l)
                         return Out
+                    #Up a level
                     elif line == '}':
                         new_file.write(l)
                         return Out
+                    #Otherwise just write this value
                     else:
                         new_file.write(l)
                         Out[line] = None
@@ -329,16 +334,24 @@ class openfoam_HeaderData:
                             #print(key, l, ChangeDict[key], nl)
                             new_file.write(nl+"\n")
 
-                if line[-1] == ");":
-                    new_file.write(l)
-                    return Out
+                try:
+                    if line[-1] == ");":
+                        new_file.write(l)
+                        return Out
 
-                if line[-1] == "}":
-                    new_file.write(l)
-                    return Out
+                    if line[-1] == "}":
+                        new_file.write(l)
+                        return Out
+                except IndexError:
+                    new_file.write(line)
 
                 prevline = line
 
+            except KeyError:
+                if key == "keep":
+                    new_file.write(line)
+                else:
+                    print(key, ChangeDict)
             except:
                 raise
                 new_file.write(l)
