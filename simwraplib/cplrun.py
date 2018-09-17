@@ -171,8 +171,15 @@ class CPLRun(Run):
 
         assert nprocs == self.mdprocs + self.cfdprocs
         self.mpiexec = self.prepare_mpiexec()
-        self.mdexec = self.mdrunsubdir + self.mdrun.executable
-        self.cfdexec = self.cfdrunsubdir + self.cfdrun.executable
+        if self.mdrun.executable_on_path:
+            self.mdexec = self.mdrun.executable
+        else:
+            self.mdexec = self.mdrunsubdir + self.mdrun.executable
+
+        if self.cfdrun.executable_on_path:
+            self.cfdexec = self.cfdrun.executable
+        else:
+            self.cfdexec = self.cfdrunsubdir + self.cfdrun.executable
 
         mdcmd = self.mdrun.prepare_cmd_arguments(self.mdrunsubdir)
         cfdcmd = self.cfdrun.prepare_cmd_arguments(self.cfdrunsubdir)

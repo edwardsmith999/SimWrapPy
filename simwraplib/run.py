@@ -145,13 +145,14 @@ class Run(object):
         #Check rundir exists and make if not
         self.rundir = rundir
         if (self.rundir[-1] != '/'): self.rundir += '/'
-        try:
-            os.makedirs(rundir)
-        except OSError as e:
-            if e.errno != errno.EEXIST:
-                raise
+#        try:
+#            os.makedirs(rundir)
+#        except OSError as e:
+#            if e.errno != errno.EEXIST:
+#                raise
 
         #Check executable specified exist in basedir
+        self.executable_on_path = False
         if (type(executable) is list):
             self.executable = executable
             for e in executable:
@@ -167,6 +168,7 @@ class Run(object):
                 exepath = which(executable)
                 if exepath != None:
                     self.executable = executable
+                    self.executable_on_path = True
                 else:
                     #Try to build exectuable
                     print("Executable "+self.basedir+executable+" not found, trying to build")
@@ -326,13 +328,18 @@ class Run(object):
         self.create_rundir(existscheck=existscheck)
 
         # Make a snapshot of the source code and store in a tarball
-        if self.srcdir != None:
-            cmd = 'tar -cPf ' + self.rundir + 'src.tar ' + self.srcdir
-            sp.Popen(cmd, shell=True)
+        if not self.minimalcopy:
+            if self.srcdir != None:
+                cmd = 'tar -cPf ' + self.rundir + 'src.tar ' + self.srcdir
+                sp.Popen(cmd, shell=True)
 
         # Copy files and save new locations to instance variables
         for f in self.copyfiles:
-            self.copyfile(f)
+            if (self.executable_on_path and self.executable in f):
+                #No need to copy executable if on path
+                pass
+            else:
+                self.copyfile(f)
 
             #print("Files = ", self.basedir+f, self.rundir+f)
 
