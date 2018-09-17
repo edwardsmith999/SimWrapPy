@@ -115,7 +115,9 @@ class Run(object):
                  extrafiles=None, 
                  finishargs={},
                  dryrun=True,
-                 deleteoutput=False):
+                 deleteoutput=False,
+                 minimalcopy=False
+                 ):
 
         if (basedir is None):
             self.basedir = ""
@@ -229,6 +231,7 @@ class Run(object):
         self.finishargs = finishargs
         self.dryrun = dryrun
         self.deleteoutput = deleteoutput
+        self.minimalcopy = minimalcopy # If true, copy only input
 
         # Keep a list of files to iterate over later
         if type(executable) is str:
@@ -338,6 +341,9 @@ class Run(object):
             if (self.executable_on_path and self.executable in f):
                 #No need to copy executable if on path
                 pass
+            elif (self.minimalcopy and self.executable in f):
+                 os.symlink(self.basedir+self.executable, 
+                            self.rundir+"/"+self.executable)
             else:
                 self.copyfile(f)
 

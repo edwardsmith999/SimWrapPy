@@ -114,7 +114,7 @@ cd $PBS_O_WORKDIR
 
         #First try make
         try:
-            cmdstg = 'make sedifoam'
+            cmdstg = 'make'
   
             #Call build and wait until build has finished 
             #before returning control to caller

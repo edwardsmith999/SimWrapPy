@@ -7,7 +7,7 @@ from semaphores import DummySemaphore, Multiphore
 
 class Study:
 
-    def __init__(self, threadlist, maxproc=None):
+    def __init__(self, threadlist, maxproc=None, studyfolder=None):
 
         """
             A single study of multiple MDThreads, each carrying
@@ -23,17 +23,36 @@ class Study:
                 maxproc - maximum number of licenses the semaphore may
                           release at once. 
 
+                studyfolder - Group all runs into a study folder wih 
+                              all copied src and executable setup files 
+                              in run.setup checked and if the same,
+                              copied only once for the study. 
+
         """
 
         self.threadlist = threadlist
         self.maxproc = maxproc
         #Get platform and check if different from specified in run objects
         self.platform = get_platform()
+        first_run = True
         for thread in threadlist:
             for run in thread:
                 if (self.platform != run.platform):
                     print("Platform inconsistent in run", run.platform, self.platform)
                 self.platform = run.platform
+                if studyfolder is not None:
+                    topdir = run.rundir.split("/")[-1]
+                    if topdir is "":
+                        topdir = run.rundir.split("/")[-2]
+                        run.rundir= (  "/".join(run.rundir.split("/")[:-2]) 
+                                     + "/" + studyfolder + "/" + topdir + "/")
+                    else:
+                        run.rundir= (  "/".join(run.rundir.split("/")[:-1])
+                                     + "/" + studyfolder + "/" + topdir + "/")
+                    if not first_run:
+                        run.minimalcopy = True
+                    else:
+                        first_run = False
 
         #Get semaphore is possible, otherwise use dummy routine
         if (get_platform() == 'local'):

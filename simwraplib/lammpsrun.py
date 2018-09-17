@@ -57,6 +57,8 @@ class LammpsRun(Run):
 
         # Set input modifier to be normal kind
         self.inputmod = LammpsInputMod
+        self.restartfile = restartfile
+        self.deleteoutput = deleteoutput
 
         extraargs["qscript_on_ARCHER"] = (
 """
@@ -160,6 +162,23 @@ cd $PBS_O_WORKDIR
                 if "Loop time" in line:
                     print("ExecutionTime in directory ", self.rundir.split("/")[-2],
                           " is ", line.split()[3])
+
+        if self.deleteoutput:
+            try:
+                os.remove(self.rundir+self.executable)
+                os.remove(self.rundir+"/"+self.restartfile)
+                if not self.minimalcopy:
+                    os.remove(self.rundir+"/src.tar")
+                os.remove(self.rundir+"/"+self.inputfile+".bak")
+                os.remove(self.rundir+"/"+self.inputfile+".new")
+                os.remove(self.rundir+"/log.lammps")
+                os.remove(self.rundir+"/lammps.out")
+                os.remove(self.rundir+"/lammps.out_err")
+            except OSError:
+                raise
+
+
+
 #                if "Total wall time" in line:
 #                    print("ExecutionTime in directory ", self.rundir.split("/")[-2],
 #                          " is ", float(line.split(":")[-1].replace("\n",""))

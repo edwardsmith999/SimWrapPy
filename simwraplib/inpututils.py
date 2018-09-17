@@ -95,8 +95,8 @@ class ScriptMod(object):
 
         #We only want to replace at most one time
         found = False
-        replacefile = self.filename + ".new"
-        sh.copy(self.filename, self.filename+".bak")
+        replacefile = self.filename + ".bak"
+        #sh.copy(self.filename, self.filename+".bak")
         with open(replacefile,'w') as new_file:
             with open(self.filename) as old_file:
                 if type(keyword) is int:
