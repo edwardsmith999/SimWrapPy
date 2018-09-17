@@ -28,6 +28,23 @@ def inheritdocstring(name, bases, attrs):
 
     return type(name, bases, attrs)
 
+def which(program):
+    import os
+    def is_exe(fpath):
+        return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
+
+    fpath, fname = os.path.split(program)
+    if fpath:
+        if is_exe(program):
+            return program
+    else:
+        for path in os.environ["PATH"].split(os.pathsep):
+            exe_file = os.path.join(path, program)
+            if is_exe(exe_file):
+                return exe_file
+
+    return None
+
 class Run(object):
 
     """ 
@@ -146,11 +163,16 @@ class Run(object):
             if os.path.isfile(self.basedir+executable):
                 self.executable = executable
             else:
-                #Try to build exectuable
-                print("Executable "+self.basedir+executable+" not found, trying to build")
-                self.build_executable()
-                if not os.path.isfile(self.basedir+executable):
-                    raise IOError("Executable "+self.basedir+executable+" not found")
+                #See if executable is on path
+                exepath = which(executable)
+                if exepath != None:
+                    self.executable = executable
+                else:
+                    #Try to build exectuable
+                    print("Executable "+self.basedir+executable+" not found, trying to build")
+                    self.build_executable()
+                    if not os.path.isfile(self.basedir+executable):
+                        raise IOError("Executable "+self.basedir+executable+" not found")
 
         #Check inputfile specified exist in basedir
         if inputfile is not None:
