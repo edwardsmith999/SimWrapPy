@@ -606,7 +606,7 @@ class Run(object):
                 else:
                     raise sp.CalledProcessError(return_code, cmd)
 
-        return
+        return return_code
 
 
     def finish(self):
