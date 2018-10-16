@@ -5,7 +5,7 @@ import subprocess as sp
 
 from simwraplib.scriptrun import ScriptRun
 from simwraplib.run import Run
-from simwraplib.inpututils import InputMod
+from simwraplib.inpututils import KeywordInputMod
 from simwraplib.platform import get_platform
 from simwraplib.hpc import PBSJob
 from simwraplib.lammpsrun import LammpsRun
@@ -95,7 +95,7 @@ class CPLRun(Run):
                 quit('Unable to obtain base directory for coupler inputs')
 
         # Set input modifier to be normal kind
-        self.inputmod = InputMod
+        self.inputmod = KeywordInputMod
 
     def build_executable(self, debug=False, platform="intel"):
 
