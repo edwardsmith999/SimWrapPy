@@ -39,6 +39,9 @@ class ScriptRun(Run):
                             npxyz = [int(i) for i in l.split("=")[1]
                                                       .replace("[","")
                                                       .replace("]","")
+                                                      .replace("np.array","")
+                                                      .replace("(","")
+                                                      .replace(")","")
                                                       .replace("\n","")
                                                       .split(",")]
                             found = True
