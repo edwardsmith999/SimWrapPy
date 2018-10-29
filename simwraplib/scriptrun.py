@@ -1,3 +1,5 @@
+import numpy as np
+
 from simwraplib.inpututils import ScriptMod 
 from simwraplib.run import Run
 
@@ -25,8 +27,31 @@ class ScriptRun(Run):
         self.cmd_args = ''
         return self.cmd_args
 
-    def get_nprocs(self, *args, **kwargs):         
-        return 1 
+    def get_nprocs(self, *args, **kwargs):
+        #Have a look in python file for standard processor format
+        found = False
+        try:
+            if ".py" in self.executable:
+                with open(self.executable, 'r') as f:
+                    for l in f:
+                        print(l)
+                        if "npxyz =" in l:
+                            npxyz = [int(i) for i in l.split("=")[1]
+                                                      .replace("[","")
+                                                      .replace("]","")
+                                                      .replace("np.array","")
+                                                      .replace("(","")
+                                                      .replace(")","")
+                                                      .replace("\n","")
+                                                      .split(",")]
+                            found = True
+                            break
+                if found:
+                    return np.product(npxyz)
+        except ValueError:
+            print("Warning in get_nprocs - Cannot work out processor number")
+
+        return 1            
 
     def finish(self):
         pass
