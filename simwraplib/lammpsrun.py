@@ -167,15 +167,15 @@ cd $PBS_O_WORKDIR
             try:
                 os.remove(self.rundir+self.executable)
                 os.remove(self.rundir+"/"+self.restartfile)
-                if not self.minimalcopy:
+                if (not self.minimalcopy) and (self.srcdir not None):
                     os.remove(self.rundir+"/src.tar")
                 os.remove(self.rundir+"/"+self.inputfile+".bak")
                 os.remove(self.rundir+"/"+self.inputfile+".new")
                 os.remove(self.rundir+"/log.lammps")
                 os.remove(self.rundir+"/lammps.out")
                 os.remove(self.rundir+"/lammps.out_err")
-            except OSError:
-                raise
+            except OSError as e:
+                print(e)
 
 
 
