@@ -167,7 +167,7 @@ cd $PBS_O_WORKDIR
             try:
                 os.remove(self.rundir+self.executable)
                 os.remove(self.rundir+"/"+self.restartfile)
-                if (not self.minimalcopy) and (self.srcdir not None):
+                if (not self.minimalcopy) and (self.srcdir != None):
                     os.remove(self.rundir+"/src.tar")
                 os.remove(self.rundir+"/"+self.inputfile+".bak")
                 os.remove(self.rundir+"/"+self.inputfile+".new")
