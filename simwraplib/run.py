@@ -519,14 +519,14 @@ class Run(object):
             yield stdout_line 
         proc.stdout.close()
     
+
         
-    def execute_local(self, blocking=False, nprocs=0, 
+    def execute_local(self, blocking=False, nprocs=0,
                       print_output=False, extra_cmds=""):
 
         """
             Runs an executable from the directory specified  
             during instatiation of the object. 
-
         """ 
 
         # Store the number of processors required
@@ -546,40 +546,14 @@ class Run(object):
             print(self.rundir + '    :    ' + cmd)
             split_cmdstg = shlex.split(cmd)
 
-            if print_output == True:
+            if print_output:
                 self.proc = sp.Popen(split_cmdstg, cwd=self.rundir, stdin=None, 
                                      stdout=sp.PIPE, stderr=sp.STDOUT, 
                                      universal_newlines=True)
                 for stdout_line in iter(self.proc.stdout.readline, ""):
                     lastline = stdout_line.replace("\n","")
-                    if ("AssertionError" in lastline):
-                        raise AssertionError(lastline)
-                    else:
-                        print("Line=",lastline)
-
+                    print(lastline)
                 self.proc.stdout.close()
-
-                #If blocking, wait here
-                if blocking:
-                    return_code = self.proc.wait()
-
-            elif print_output == "catch_error":
-                try:
-                    output = sp.check_output(split_cmdstg, cwd=self.rundir, 
-                                             stdin=None, stderr=sp.STDOUT).decode()
-                    success = True 
-                except sp.CalledProcessError as e:
-                    output = e.output.decode()
-                    success = False
-
-                if (success == False):
-                    o = output.split("\n")
-                    for l in o:
-                        if ("AssertionError" in l):
-                            raise AssertionError(l)
-                    return_code = 1
-                else:
-                    return_code = 0
 
             else:
                 #Output is piped to files
@@ -590,11 +564,11 @@ class Run(object):
                 self.proc = sp.Popen(split_cmdstg, cwd=self.rundir, stdin=None, 
                                      stdout=fstout, stderr=fsterr)
 
-                #If blocking, wait here
-                if blocking:
-                    return_code = self.proc.wait()
+            #If blocking, wait here
+            if blocking:
+                return_code = self.proc.wait()
 
-            if print_output == False:
+            if not print_output:
                 fstout.close()
                 fsterr.close()
 
@@ -606,7 +580,102 @@ class Run(object):
                 else:
                     raise sp.CalledProcessError(return_code, cmd)
 
-        return return_code
+        return
+
+#    def execute_local(self, blocking=False, nprocs=0, 
+#                      print_output=False, extra_cmds=""):
+
+#        """
+#            Runs an executable from the directory specified  
+#            during instatiation of the object. 
+
+#        """ 
+
+#        # Store the number of processors required
+#        if nprocs==0:
+#            nprocs = self.get_nprocs()
+
+#        cmd = self.prepare_cmd_string(self.executable, nprocs,
+#                                      extra_cmds=extra_cmds)
+
+#        #Setup standard out and standard error files
+#        stdoutfile = self.rundir+self.outputfile
+#        stderrfile = self.rundir+self.outputfile+'_err'
+
+#        if (self.dryrun):
+#            print('DRYRUN -- no execution in ' + self.rundir + ' \nRun would be: ' + cmd)
+#        else:
+#            print(self.rundir + '    :    ' + cmd)
+#            split_cmdstg = shlex.split(cmd)
+
+#            if print_output == True:
+#                self.proc = sp.Popen(split_cmdstg, cwd=self.rundir, stdin=None, 
+#                                     stdout=sp.PIPE, stderr=sp.STDOUT, 
+#                                     universal_newlines=True)
+#                for stdout_line in iter(self.proc.stdout.readline, ""):
+#                    lastline = stdout_line.replace("\n","")
+#                    if ("AssertionError" in lastline):
+#                        raise AssertionError(lastline)
+#                    else:
+#                        print("Line=",lastline)
+
+#                self.proc.stdout.close()
+
+#                #If blocking, wait here
+#                if blocking:
+#                    return_code = self.proc.wait()
+
+#            elif print_output == "catch_error":
+#                try:
+#                    output = sp.check_output(split_cmdstg, cwd=self.rundir, 
+#                                             stdin=None, stderr=sp.STDOUT).decode()
+#                    success = True 
+#                except sp.CalledProcessError as e:
+#                    output = e.output.decode()
+#                    success = False
+
+#                if (success == False):
+#                    o = output.split("\n")
+#                    for l in o:
+#                        if ("AssertionError" in l):
+#                            raise AssertionError(l)
+#                    return_code = 1
+#                else:
+#                    return_code = 0
+
+#            else:
+#                #Output is piped to files
+#                fstout = open(stdoutfile,'w')
+#                fsterr = open(stderrfile,'w')
+
+#                #Execute subprocess and create subprocess object
+#                self.proc = sp.Popen(split_cmdstg, cwd=self.rundir, stdin=None, 
+#                                     stdout=fstout, stderr=fsterr)
+
+#                #If blocking, wait here
+#                if blocking:
+#                    return_code = self.proc.wait()
+
+#            if print_output == False:
+#                fstout.close()
+#                fsterr.close()
+
+#            if return_code:
+#                if not print_output:
+#                    with open(stderrfile, "r") as f:
+#                        error = f.read()
+#                    raise sp.CalledProcessError(return_code, cmd + "\n" + error)
+#                else:
+#                    raise sp.CalledProcessError(return_code, cmd)
+
+
+#        if self.proc.poll() == None:
+#            import time
+#            time.wait(3)
+#            self.proc.terminate()
+#            self.proc.wait()
+
+#        return return_code
 
 
     def finish(self):
