@@ -6,7 +6,7 @@ from shutil import move
 import shutil as sh
 import subprocess as sp
 
-from .read_header import openfoam_HeaderData
+from read_header import openfoam_HeaderData
 
 class cd:
     """Context manager for changing the current working directory"""
@@ -118,54 +118,13 @@ class ScriptMod(object):
         #Replace original file
         sh.copy(replacefile, self.filename)
 
+
+
 class KeywordInputMod(InputMod):
 
     def __init__(self, filename):
         super(KeywordInputMod, self).__init__(filename)
-
-    def read_inputs(self, keyword, nkeyvals=-1):
-        """ 
-            Read N values underneath the first appearance of
-            keyword with keyvals (length N)
-            Input file of format:
-
-
-            KEYWORD
-            keyvals[0]
-            keyvals[1]
-            ...
-            keyvals[-1]
-
-        """
-
-        found = False
-        nvals = nkeyvals
-        vals = []
-        for line in open(self.filename):
-            if found:
-                if (nkeyvals == -1):
-                    if line in ['\n', '\r\n'] or line[0] == "#":
-                        break
-                    else:
-                        vals.append(line.strip().replace("\n", ""))
-                elif (nvals > 0):
-                    vals.append(line.strip().replace("\n", ""))
-                    #print(line)
-                    nvals -= 1
-                elif (nvals == 0):
-                    break
-
-            # Take into account keyword might be "turned off" by a
-            # comment character before it
-            elif (line[0:len(keyword)]   == keyword or 
-                  line[1:len(keyword)+1] == keyword ): 
-
-                # Mark the keyword as found 
-                found = True
-
-        return vals
-                
-
+    
     def replace_input(self, keyword, keyvals):    
 
         """ 
@@ -228,7 +187,7 @@ class KeywordInputMod(InputMod):
         
         if ( found == False ):
 
-            print((keyword, keyvals))
+            print(keyword, keyvals)
             with open(self.filename,'a') as f:
                 f.write(keyword+'\n')
                 for keyval in keyvals:
@@ -288,7 +247,7 @@ class CommentedInputMod(InputMod):
                 fout.write(line)
 
         if (not keywordfound):
-            print(('Input string '+keyword+' not found.'))
+            print('Input string '+keyword+' not found.')
         sh.move(self.filename+'.tmp',self.filename) 
 
 class CFDInputMod(CommentedInputMod):
@@ -328,7 +287,7 @@ class OpenFOAMInputMod(InputMod):
 
         #Full openfoam form
         if type(keyvals) is dict:
-            for k, v in list(keyvals.items()):
+            for k, v in keyvals.items():
                 self.HD[keyword][k] = v
             #quit()
             self.headerObj.header_changer(self.HD[keyword])
@@ -468,7 +427,7 @@ class InputList(list):
                             " -- must be InputList or InputDict type")
 
         returnlist = InputList()
-        ziplist = list(zip(self,Listx))
+        ziplist = zip(self,Listx)
         for entry in ziplist:
             tempdict = {}
             for dic in entry:
@@ -523,7 +482,7 @@ class InputList(list):
         filenames = []
         for name in self:
             filename = ''
-            for key, value in list(name.items()):
+            for key, value in name.items():
                 if type(value) is float:
                     value = np.round(value,2)
                 if type(value) is int:
@@ -560,8 +519,8 @@ class InputDict(dict):
     #Expand InputDict with multiple values per entry into InputList
     def expand(self):
 
-        expansion = list(self.values())[0]
-        returnlist = InputList({list(self.keys())[0]:e} for e in expansion)
+        expansion = self.values()[0]
+        returnlist = InputList({self.keys()[0]:e} for e in expansion)
         
         return returnlist       
 

@@ -12,7 +12,10 @@ from simwraplib.inpututils import OpenFOAMInputMod, reverse_readline
 from simwraplib.hpc import PBSJob
 from simwraplib.run import Run, inheritdocstring
 
-class OpenFOAMRun(Run, metaclass=inheritdocstring):
+class OpenFOAMRun(Run):
+
+    __metaclass__ = inheritdocstring
+    
 
     def __init__(self, 
                  srcdir='../src/',
@@ -224,6 +227,6 @@ cd $PBS_O_WORKDIR
             lastlines = fileObj.readlines()[-10:]
             for line in lastlines:
                 if "ExecutionTime" in line:
-                    print(("ExecutionTime in directory ", 
+                    print("ExecutionTime in directory ", 
                           self.rundir.split("/")[-2], 
-                          " is ", line.split()[2]))
+                          " is ", line.split()[2])

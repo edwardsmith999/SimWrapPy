@@ -8,4 +8,4 @@ from simwraplib.minimalrun import MinimalRun
 from simwraplib.scriptrun import ScriptRun
 from simwraplib.thread import Thread
 from simwraplib.study import Study
-from simwraplib.inpututils import InputMod, InputDict, InputList
+from simwraplib.inpututils import InputMod, InputDict, InputList, KeywordInputMod

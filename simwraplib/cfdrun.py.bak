@@ -159,7 +159,7 @@ class CFDRun(Run):
     def execute(self, blocking=False, **kwargs):
         
         if (self.dryrun):
-            print(('DRYRUN -- no execution in ' + self.rundir))
+            print('DRYRUN -- no execution in ' + self.rundir)
             return
         
         if (self.platform == 'cx1' or
@@ -198,7 +198,7 @@ class CFDRun(Run):
 
         #Build runstring
         cmdstg = 'mpiexec -n ' + str(nprocs) + ' ' + self.executable 
-        print((self.rundir + ':\t' + cmdstg))
+        print(self.rundir + ':\t' + cmdstg)
 
         #Setup standard out and standard error files
         stdoutfile = self.rundir+self.outputfile

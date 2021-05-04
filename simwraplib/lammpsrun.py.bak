@@ -12,8 +12,10 @@ from simwraplib.inpututils import LammpsInputMod
 from simwraplib.hpc import PBSJob
 from simwraplib.run import Run, inheritdocstring
 
-class LammpsRun(Run, metaclass=inheritdocstring):
+class LammpsRun(Run):
         
+    __metaclass__ = inheritdocstring
+
     def __init__(self, 
                  srcdir='../src/',
                  basedir='../bin/',
@@ -158,8 +160,8 @@ cd $PBS_O_WORKDIR
             lastlines = fileObj.readlines()[-40:]
             for line in lastlines:
                 if "Loop time" in line:
-                    print(("ExecutionTime in directory ", self.rundir.split("/")[-2],
-                          " is ", line.split()[3]))
+                    print("ExecutionTime in directory ", self.rundir.split("/")[-2],
+                          " is ", line.split()[3])
 
         if self.deleteoutput:
             try:

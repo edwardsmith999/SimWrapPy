@@ -7,13 +7,13 @@ def get_platform():
     s += sp.Popen(['domainname'],stdout=sp.PIPE).communicate()[0]
     s += sp.Popen(['dnsdomainname'],stdout=sp.PIPE).communicate()[0]
   
-    if ('meflow' in s): 
+    if (b'meflow' in s): 
         platform = 'local'
-    elif ('cx1' in s):
+    elif (b'cx1' in s):
         platform = 'cx1'
-    elif ('cx2' in s): 
+    elif (b'cx2' in s): 
         platform = 'cx2'
-    elif ('eslogin' in s): 
+    elif (b'eslogin' in s): 
         platform = 'archer'
     else:
         platform = 'local'

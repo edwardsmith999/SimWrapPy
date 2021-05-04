@@ -150,7 +150,7 @@ class openfoam_HeaderData:
                     key, value = split
                     Out[key] = value.strip(';')
                 else:
-                    print(("Error, two values not a statement", line))
+                    print("Error, two values not a statement", line)
             #Otherwise we have to parse as needed
             elif len(split) > 2:
                 key = split[0]
@@ -271,7 +271,7 @@ class openfoam_HeaderData:
                         else:
                             new_file.write(key + "    " + str(ChangeDict[key]) + ";\n")
                     else:
-                        print(("Error, two values not a statement", line))
+                        print("Error, two values not a statement", line)
                 #Otherwise we have to parse as needed
                 elif len(split) > 2:
                     key = split[0]
@@ -351,7 +351,7 @@ class openfoam_HeaderData:
                 if key == "keep":
                     new_file.write(line)
                 else:
-                    print((key, ChangeDict))
+                    print(key, ChangeDict)
             except:
                 raise
                 new_file.write(l)

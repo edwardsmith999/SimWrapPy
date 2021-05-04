@@ -36,4 +36,4 @@ class GnuplotUtils:
             inf.close()
             outf.close()
         except IOError as e:
-            print("Gnuplot file I/O error({0}): {1}".format(e.errno, e.strerror))
+            print "Gnuplot file I/O error({0}): {1}".format(e.errno, e.strerror)

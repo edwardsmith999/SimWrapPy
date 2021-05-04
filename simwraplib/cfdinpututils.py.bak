@@ -34,5 +34,5 @@ class CFDInputMod(InputMod):
                 fout.write(line)
 
         if (not keywordfound):
-            print(('Input string '+keyword+' not found.'))
+            print('Input string '+keyword+' not found.')
         sh.move(self.filename+'.tmp',self.filename) 

@@ -136,8 +136,8 @@ class CPLRun(Run):
         # Enforce directory structure for now
         self.mdrunsubdir = './md_data/'
         self.cfdrunsubdir = './cfd_data/'
-        print(('Resetting MDRun rundir to ' + self.rundir + self.mdrunsubdir))
-        print(('Resetting CFDRun rundir to ' + self.rundir + self.cfdrunsubdir))
+        print('Resetting MDRun rundir to ' + self.rundir + self.mdrunsubdir)
+        print('Resetting CFDRun rundir to ' + self.rundir + self.cfdrunsubdir)
         self.mdrun.rundir = self.rundir + self.mdrunsubdir
         self.cfdrun.rundir = self.rundir + self.cfdrunsubdir
 

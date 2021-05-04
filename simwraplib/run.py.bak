@@ -1,4 +1,4 @@
- # Only Python 2.x
+from __future__ import print_function # Only Python 2.x
 import os
 import errno
 import shutil as sh
@@ -125,14 +125,13 @@ class Run(object):
             self.basedir = basedir
             if (basedir[-1] != '/'): 
                 self.basedir += '/'
-            #Check base directory exists
+           #Check base directory exists
             if os.path.isdir(basedir):
                 self.basedir = basedir
             else:
                 raise IOError("Path "+basedir+" not found")
 
         #Check src directory exists
-        self.srcdir = srcdir
         if (srcdir is not None):
             if (srcdir[-1] != '/'): self.srcdir += '/'
             if os.path.isdir(srcdir):
@@ -197,6 +196,7 @@ class Run(object):
         self.outputfile = outputfile
 
         #Dictonary of values to change in input file
+        print(inputchanges)
         if type(inputchanges) is dict:
             self.inputchanges = inputchanges
         else:
@@ -371,9 +371,8 @@ class Run(object):
             self.inputchanges.update(extrachanges)
 
         for key in self.inputchanges:
+            print(key)
             values = self.inputchanges[key]
-            print("run prepare_inputs, key=", key, "values=",values)
-
             mod.replace_input(key, values)    
         
         return
@@ -482,7 +481,7 @@ class Run(object):
         return cmd
 
     def execute(self, blocking=False, nprocs=0, 
-                print_output=False, out_to_file=True, extra_cmds=""):
+                print_output=False, extra_cmds=""):
 
         """
             Wrapper for execute_cx1, execute_local, and archer.
@@ -494,7 +493,6 @@ class Run(object):
         else:
             self.execute_local(blocking=blocking, nprocs=nprocs, 
                                print_output=print_output,
-                               out_to_file = out_to_file,
                                extra_cmds=extra_cmds)
 
 
@@ -524,15 +522,12 @@ class Run(object):
 
         
     def execute_local(self, blocking=False, nprocs=0,
-                      print_output=False, out_to_file=True, extra_cmds=""):
+                      print_output=False, extra_cmds=""):
 
         """
             Runs an executable from the directory specified  
             during instatiation of the object. 
         """ 
-
-        if (out_to_file and print_output):
-            raise IOError("execute error, can't both print output and to file")
 
         # Store the number of processors required
         if nprocs==0:
@@ -560,7 +555,7 @@ class Run(object):
                     print(lastline)
                 self.proc.stdout.close()
 
-            elif out_to_file:
+            else:
                 #Output is piped to files
                 fstout = open(stdoutfile,'w')
                 fsterr = open(stderrfile,'w')
@@ -568,27 +563,22 @@ class Run(object):
                 #Execute subprocess and create subprocess object
                 self.proc = sp.Popen(split_cmdstg, cwd=self.rundir, stdin=None, 
                                      stdout=fstout, stderr=fsterr)
-            else:
-                self.CalledProcessError = sp.CalledProcessError
-                self.proc = sp.Popen(split_cmdstg, cwd=self.rundir, stdin=None, 
-                                     stdout=sp.PIPE, stderr=sp.PIPE, 
-                                     universal_newlines=True)
-
 
             #If blocking, wait here
             if blocking:
                 return_code = self.proc.wait()
-                if return_code:
-                    if not print_output:
-                        with open(stderrfile, "r") as f:
-                            error = f.read()
-                        raise sp.CalledProcessError(return_code, cmd + "\n" + error)
-                    else:
-                        raise sp.CalledProcessError(return_code, cmd)
 
-            if not print_output and out_to_file:
+            if not print_output:
                 fstout.close()
                 fsterr.close()
+
+            if return_code:
+                if not print_output:
+                    with open(stderrfile, "r") as f:
+                        error = f.read()
+                    raise sp.CalledProcessError(return_code, cmd + "\n" + error)
+                else:
+                    raise sp.CalledProcessError(return_code, cmd)
 
         return
 

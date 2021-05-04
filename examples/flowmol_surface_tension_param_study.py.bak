@@ -51,7 +51,7 @@ for thread in range(0,len(changes)):
 
      runlist = [run]
      threadlist.append(runlist)
-     print(('Run in directory '  + rundir + ' and dryrun is '  + str(run.dryrun)))
+     print('Run in directory '  + rundir + ' and dryrun is '  + str(run.dryrun))
 
 # Run the study
 #study = swl.Study(threadlist,ncpus)
