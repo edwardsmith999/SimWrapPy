@@ -232,10 +232,10 @@ class KeywordInputMod(InputMod):
             with open(self.filename,'a') as f:
                 f.write(keyword+'\n')
                 for keyval in keyvals:
-                    f.write(keyval+'\n')
+                    f.write(str(keyval)+'\n')
     
-            quit('Input string ' + keyword + 
-                 ' not found, appended to file instead.')
+            print('Input string ' + keyword + 
+                  ' not found, appended to file instead.')
 
 class MDInputMod(KeywordInputMod):
     def __init__(self,filename):

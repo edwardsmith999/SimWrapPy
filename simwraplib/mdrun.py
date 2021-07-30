@@ -126,9 +126,10 @@ class MDRun(Run, metaclass=inheritdocstring):
         self.create_rundir(existscheck=existscheck)
 
         # Make a snapshot of the source code and store in a tarball
-        cmd = 'tar -cPf ' + self.rundir + 'src.tar ' + self.srcdir+'*.f90'
-        print(cmd)
-        sp.Popen(cmd,shell=True)
+        if not self.minimalcopy:
+            cmd = 'tar -cPf ' + self.rundir + 'src.tar ' + self.srcdir+'/*.f90'
+            print(cmd)
+            sp.Popen(cmd,shell=True)
 
         try:
             # Copy post_proc folder from base directory (if not there already)

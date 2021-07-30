@@ -482,7 +482,8 @@ class Run(object):
         return cmd
 
     def execute(self, blocking=False, nprocs=0, 
-                print_output=False, out_to_file=True, extra_cmds=""):
+                print_output=False, out_to_file=True, 
+                shell=False, extra_cmds=""):
 
         """
             Wrapper for execute_cx1, execute_local, and archer.
@@ -495,7 +496,8 @@ class Run(object):
             self.execute_local(blocking=blocking, nprocs=nprocs, 
                                print_output=print_output,
                                out_to_file = out_to_file,
-                               extra_cmds=extra_cmds)
+                               extra_cmds=extra_cmds, 
+                               shell=shell)
 
 
     def execute_pbs(self, blocking=False, extra_cmds=""):
@@ -524,7 +526,8 @@ class Run(object):
 
         
     def execute_local(self, blocking=False, nprocs=0,
-                      print_output=False, out_to_file=True, extra_cmds=""):
+                      print_output=False, out_to_file=True, 
+                      shell=False, extra_cmds=""):
 
         """
             Runs an executable from the directory specified  
@@ -549,12 +552,15 @@ class Run(object):
             print('DRYRUN -- no execution in ' + self.rundir + ' \nRun would be: ' + cmd)
         else:
             print(self.rundir + '    :    ' + cmd)
-            split_cmdstg = shlex.split(cmd)
+            if shell:
+                split_cmdstg = cmd
+            else:
+                split_cmdstg = shlex.split(cmd)
 
             if print_output:
                 self.proc = sp.Popen(split_cmdstg, cwd=self.rundir, stdin=None, 
                                      stdout=sp.PIPE, stderr=sp.STDOUT, 
-                                     universal_newlines=True)
+                                     universal_newlines=True, shell=shell)
                 for stdout_line in iter(self.proc.stdout.readline, ""):
                     lastline = stdout_line.replace("\n","")
                     print(lastline)
@@ -567,12 +573,12 @@ class Run(object):
 
                 #Execute subprocess and create subprocess object
                 self.proc = sp.Popen(split_cmdstg, cwd=self.rundir, stdin=None, 
-                                     stdout=fstout, stderr=fsterr)
+                                     stdout=fstout, stderr=fsterr, shell=shell)
             else:
                 self.CalledProcessError = sp.CalledProcessError
                 self.proc = sp.Popen(split_cmdstg, cwd=self.rundir, stdin=None, 
                                      stdout=sp.PIPE, stderr=sp.PIPE, 
-                                     universal_newlines=True)
+                                     universal_newlines=True, shell=shell)
 
 
             #If blocking, wait here
