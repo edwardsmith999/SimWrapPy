@@ -144,7 +144,7 @@ class MDRun(Run, metaclass=inheritdocstring):
             if (self.basedir+f == self.rundir+f):
                 pass
             else:
-                sh.copy(self.basedir+f, self.rundir+f)
+                sh.copy2(self.basedir+f, self.rundir+f)
 
         # Make changes to the input file once it has been copied
         self.prepare_inputs()

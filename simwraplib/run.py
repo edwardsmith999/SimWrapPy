@@ -5,6 +5,7 @@ import shutil as sh
 import subprocess as sp
 import inspect
 import shlex
+import sys
 
 import simwraplib.userconfirm as uc
 from simwraplib.platform import get_platform
@@ -90,7 +91,7 @@ class Run(object):
 
         Example usage from a higher level:
 
-            run = Run('../MD_dCSE/src_code/', etc.)
+            run = Run('../MD_dCSE//src_code/', etc.)
             run.setup()
             run.execute()
             run.finish()
@@ -121,20 +122,24 @@ class Run(object):
 
         if (basedir is None):
             self.basedir = ""
+        if (basedir is ""):
+            self.basedir = ""
         else:
             self.basedir = basedir
-            if (basedir[-1] != '/'): 
-                self.basedir += '/'
-            #Check base directory exists
-            if os.path.isdir(basedir):
-                self.basedir = basedir
-            else:
-                raise IOError("Path "+basedir+" not found")
+            if (basedir[-1] != os.sep): 
+                self.basedir += os.sep
+
+        #Check base directory exists
+        if os.path.isdir(basedir):
+            self.basedir = basedir
+        else:
+            print("Basedir = ", basedir)
+            raise IOError("Path "+basedir+" not found")
 
         #Check src directory exists
         self.srcdir = srcdir
         if (srcdir is not None):
-            if (srcdir[-1] != '/'): self.srcdir += '/'
+            if (srcdir[-1] != os.sep): self.srcdir += os.sep
             if os.path.isdir(srcdir):
                 self.srcdir = srcdir
             else:
@@ -147,7 +152,8 @@ class Run(object):
 
         #Check rundir exists and make if not
         self.rundir = rundir
-        if (self.rundir[-1] != '/'): self.rundir += '/'
+        if (self.rundir[-1] != os.sep): 
+            self.rundir += os.sep
 #        try:
 #            os.makedirs(rundir)
 #        except OSError as e:
@@ -343,7 +349,7 @@ class Run(object):
                 pass
             elif (self.minimalcopy and self.executable in f):
                  os.symlink(self.basedir+self.executable, 
-                            self.rundir+"/"+self.executable)
+                            self.rundir+os.sep+self.executable)
             else:
                 self.copyfile(f)
 
@@ -416,7 +422,7 @@ class Run(object):
             if self.rundir in folder:
                 self.rmdir = folder
             else:
-                self.rmdir = self.rundir + "/" + folder
+                self.rmdir = self.rundir + os.sep + folder
         else:
            self.rmdir = self.rundir
 
@@ -478,6 +484,16 @@ class Run(object):
         else:
             cmd = (self.mpiexec + " " + executable 
                    + " " + cmd_args + " " + extra_cmds)
+
+
+        #If windows used, run Flowmol in linux subsystem
+        print("Platform identified as ", sys.platform)
+        if "linux" in sys.platform:
+            pass
+        elif "win" in sys.platform:
+            cmd = 'bash -c "chmod +x ' + executable + ' ; ' + cmd + '"'
+            print(cmd)
+            
 
         return cmd
 
@@ -764,7 +780,7 @@ class Run(object):
 
             if key == 'final_state':
                 
-                src = self.rundir + 'results/final_state'
+                src = self.rundir + 'results' + os.sep + 'final_state'
                 dst = self.rundir + value
                 print('Moving ' + src + ' to ' + dst)
                 sh.move(src,dst)
@@ -805,7 +821,7 @@ class Run(object):
             
             if key == 'copy_resultsdir':
                
-                src = self.rundir + 'results/'
+                src = self.rundir + 'results' + os.sep
                 dst = self.rundir + value 
                 print('Copying ' + src + ' to ' + dst) 
                 if os.path.exists(dst):

@@ -1,3 +1,4 @@
+
 import string
 import os
 import numpy as np
@@ -19,6 +20,52 @@ class cd:
 
     def __exit__(self, etype, value, traceback):
         os.chdir(self.savedPath)
+
+import re
+import shutil
+from tempfile import mkstemp
+
+
+def sed(pattern, replace, source, dest=None, count=0):
+    """Reads a source file and writes the destination file.
+
+    In each line, replaces pattern with replace.
+
+    Args:
+        pattern (str): pattern to match (can be re.pattern)
+        replace (str): replacement str
+        source  (str): input filename
+        count (int): number of occurrences to replace
+        dest (str):   destination filename, if not given, source will be over written.        
+    """
+
+    fin = open(source, 'r')
+    num_replaced = count
+
+    if dest:
+        fout = open(dest, 'w')
+    else:
+        fd, name = mkstemp()
+        fout = open(name, 'w')
+
+    for line in fin:
+        out = re.sub(pattern, replace, line)
+        fout.write(out)
+
+        if out != line:
+            num_replaced += 1
+        if count and num_replaced > count:
+            break
+    try:
+        fout.writelines(fin.readlines())
+    except Exception as E:
+        raise E
+
+    fin.close()
+    fout.close()
+
+    if not dest:
+        sh.move(name, source) 
 
 
 def reverse_readline(filename, buf_size=8192):
@@ -183,6 +230,85 @@ class KeywordInputMod(InputMod):
         """
 
         found = False
+        sh.copy(self.filename, self.filename+".bak") 
+
+        #fd, tempfile = mkstemp()
+        tempfile = self.filename + ".temp"
+        fout = open(tempfile, 'w')
+        #skipcount = 0
+
+        with open(self.filename) as fin:
+            for line in fin:
+                # Take into account keyword might be "turned off" by a
+                # comment character before it
+                if ((line[0:len(keyword)]   == keyword or 
+                     line[1:len(keyword)+1] == keyword)  
+                     and not found): 
+
+                    # Mark the keyword as found 
+                    found = True
+
+                    # Ensure keyword is activated (i.e. not commented out)
+                    fout.write(keyword+"\n")
+                    print("writing = ", keyword)
+
+                    # Values start on next line
+                    if type(keyvals) is list:
+                        for val in keyvals:
+                            try:
+                                nl = next(fin)
+                            except StopIteration:
+                                nl = ""
+                            if (val != None):
+                                fout.write(str(val) + "\n")
+                                print("Replacing ", nl.replace("\n",""), "with", str(val))
+                            else:
+                                print("NOT replacing ", nl.replace("\n",""))
+                                fout.write(nl)
+                                #skipcount += 1
+                    else:
+                        fout.write(str(val))
+
+                #elif skipcount == 0:
+                else:
+                    #print(line, keyword, keyvals, found)
+                    fout.write(line)
+                #else:
+                    #print("Skipping", line, skipcount)
+                    #skipcount -= 1
+
+        #Close new file and replace old one
+        fout.close()
+        sh.move(tempfile, self.filename)
+
+        #Append to file if not found
+        if ( found == False ):
+            with open(self.filename,'a') as f:
+                f.write(keyword+'\n')
+                for keyval in keyvals:
+                    f.write(str(keyval)+'\n')
+
+            print('Input string ' + keyword + 
+                  ' not found, appended to file instead.')
+
+
+    def replace_input_sed(self, keyword, keyvals):    
+
+        """ 
+            Replace N values underneath the first appearance of
+            keyword with keyvals (length N)
+            Input file of format:
+
+
+            KEYWORD
+            keyvals[0]
+            keyvals[1]
+            ...
+            keyvals[-1]
+
+        """
+
+        found = False
         key_lno = 0 # Keyword linenumber
 
         for line in open(self.filename):
@@ -199,7 +325,8 @@ class KeywordInputMod(InputMod):
 
                 # Ensure keyword is activated (i.e. not commented out)
                 sedstr = ( "sed -i '" + str(key_lno) + "s/.*/" + keyword + 
-                           "/' " + self.filename ) 
+                           "/' " + self.filename )
+                print("sed = ", keyword, keyvals, sedstr)
                 os.system(sedstr)
 
                 # Values start on next line
@@ -213,6 +340,8 @@ class KeywordInputMod(InputMod):
 
                             sedstr = ( "sed -i '" + str(val_lno) + "s/.*/" + 
                                         str(val) + "/' " + self.filename ) 
+                            print("sed = ", keyword, keyvals, sedstr)
+
                             os.system(sedstr)
                     
                         val_lno += 1
@@ -221,6 +350,8 @@ class KeywordInputMod(InputMod):
 
                     sedstr = ( "sed -i '" + str(val_lno) + "s/.*/" + 
                                 str(keyvals) + "/' " + self.filename ) 
+                    print("sed = ", keyword, keyvals, sedstr)
+
                     os.system(sedstr)
 
                 # Stop looping through the file
