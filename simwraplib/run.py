@@ -120,21 +120,20 @@ class Run(object):
                  minimalcopy=False
                  ):
 
-        if (basedir is None):
+        if (basedir == None):
             self.basedir = ""
-        if (basedir is ""):
+        elif (basedir is ""):
             self.basedir = ""
         else:
+            #Add trailing slash
             self.basedir = basedir
-            if (basedir[-1] != os.sep): 
+            if (self.basedir[-1] != os.sep): 
                 self.basedir += os.sep
 
-        #Check base directory exists
-        if os.path.isdir(basedir):
-            self.basedir = basedir
-        else:
-            print("Basedir = ", basedir)
-            raise IOError("Path "+basedir+" not found")
+            #Check base directory exists
+            if not os.path.isdir(self.basedir):
+                print("Basedir = ", self.basedir)
+                raise IOError("Path "+self.basedir+" not found")
 
         #Check src directory exists
         self.srcdir = srcdir
