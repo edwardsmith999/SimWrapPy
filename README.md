@@ -1,11 +1,11 @@
 # SimWrapPy
 
-A wrapper which allows parameter simulation of LAMMPS, OpenFOAM, Flowmol and coupled simulations.
+A wrapper which allows parameter simulation of LAMMPS, OpenFOAM, Flowmol and coupled simulations while being extendable for other codes.
 
 ## Key Features
 
- - A wrapper which creates a folder with copies of everything needed for a self contained and repeatable run (including source code.
- - A set of input utilities which allow the quick construction of permutations and combinations (using overloaded add/multiply).
+ - A wrapper which creates a folder containing copies of everything needed for a self-contained and repeatable run (including source code).
+ - A set of input utilities which allow the quick construction of permutations and combinations (using overloaded objects to support add/multiply syntax).
  - A higher level interface for running codes with a key set of functions: setup, run and finish. The base run class specifies a lot of the difficult task of deploying on various supercomputing platforms using PBS submission scripts.
  - The thread and study class allows multiprocessor parallelism by queuing jobs to utilise the available resources using an internal semaphore system.
  - A framework to setup coupled simulations (setup with http://www.cpl-library.org/) as a combination of multiple run objects.
@@ -16,10 +16,12 @@ A wrapper which allows parameter simulation of LAMMPS, OpenFOAM, Flowmol and cou
 At the top level, you create a study. Each study contains a number of threads which each run using the multiprocessor framework in Python. You can specify how many to run at the same time based on the compute resource you have available.
   - study - manages the running of all threads in blocks based on specified max number of cpus
   - thread - a subprocess running on a thread (should be one per cpu)
-  - run - an object which creates the folder structure, changes inputs and runs the specified executable
+  - run* - an object which creates the folder structure, changes inputs and runs the specified executable
   - inpututils - helper functions to change input files for various codes
 All runs are defined in terms of an existing code directory with src code, an executable, the location of the  input files and the directory in which to run. 
 The user then specifies changes to this base directory to be made in each of the different runs.
+ 
+* The reason for both thread and run classes, is to allow the case of a thread which has manages a set of sequential runs, for example one to setup the simulation and a second for the main "production" run. 
  
 ## Quickstart
 
