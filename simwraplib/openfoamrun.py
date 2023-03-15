@@ -54,22 +54,38 @@ class OpenFOAMRun(Run, metaclass=inheritdocstring):
         # Set input modifier to be normal kind
         self.inputmod = OpenFOAMInputMod
 
-        extraargs["qscript_on_ARCHER"] = (
+        extraargs["qscript_on_ARCHER2"] = (
 """
-module load python-compute/2.7.6
-module load pc-numpy
-module unload PrgEnv-cray
-module load PrgEnv-gnu
-module unload gcc/6.3.0
-module load gcc/5.1.0
+#!/bin/bash
 
-export CRAYPE_LINK_TYPE=dynamic
+#SBATCH --job-name=my_cpl_demo
+#SBATCH --time=0:10:0
+#SBATCH --exclusive
+#SBATCH --export=none
+#SBATCH --account=ecseaf01
 
-#Source OpenFOAM
-""" 
-+ "cd "
-+ basedir + 
+#SBATCH --partition=standard
+#SBATCH --qos=standard
+
+#SBATCH --nodes=2
+
+# single thread export overriders any declaration in srun
+export OMP_NUM_THREADS=1
+
+module load other-software
+module load cpl-openfoam/2106
+source $FOAM_CPL_APP/SOURCEME.sh
+
+# using your own installtion: remove the last three lines and use these four lines instead
+# remmeber to update the path to the two SOURCEME.sh files
+#module load openfoam/com/v2106
+#module load lammps/13_Jun_2022
+#module load cray-python
+#source
 """
++ " " + basedir + "/CPL_APP_OPENFOAM/SOURCEME.sh" +
+"""
+
 source SOURCEME.sh
 
 #Got to work directory
@@ -80,20 +96,30 @@ rm -f qscript.*
 rm -f output
 
 #Clean OpenFOAM files in case 
+
 """
 + "cd ./" 
 + self.inputfile +
 """
+
 python clean.py -f
-blockMesh
-decomposePar
+
+# load restor0Dir tool
+. ${WM_PROJECT_DIR:?}/bin/tools/RunFunctions        # Tutorial run functions
+restore0Dir
+
+blockMesh > log.blockMesh 2>&1
+decomposePar > log.decomposePar 2>&1
 cd ../
 
-#Avoid OpenMP
-export OMP_NUM_THREADS=1
+SHARED_ARGS="--distribution=block:block --hint=nomultithread"
 
-#Not sure we need absolute path here 
-cd $PBS_O_WORKDIR
+srun ${SHARED_ARGS} --het-group=0 --nodes=1 --tasks-per-node=2 MD : --het-group=1 --nodes=1 --tasks-per-node=2
+""" 
++ " " + executable + " -parallel" + 
+"""
+
+reconstructPar > log.reconstructPar 2>&1
 """)
 
 
