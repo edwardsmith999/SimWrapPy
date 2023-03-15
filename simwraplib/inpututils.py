@@ -510,11 +510,11 @@ class OpenFOAMInputMod(InputMod):
         #Trigger rebuild of code
         with cd(self.fdir):
             clean = sp.check_output("python clean.py -f", shell=True)
-            blockMesh = sp.Popen("blockMesh", shell=True, stdout=sp.PIPE, stderr=sp.PIPE)
+            blockMesh = sp.Popen("blockMesh", shell=True, stdout=sp.PIPE, stderr=sp.PIPE, encoding='utf8')
             out, err = blockMesh.communicate()
             if "not found" in err:
                 print("WARNING -- blockMesh not found, have you called SOURCEME.sh in OpenFOAM APP")
-            decomposeParDict = sp.Popen("decomposePar", shell=True, stdout=sp.PIPE, stderr=sp.PIPE)
+            decomposeParDict = sp.Popen("decomposePar", shell=True, stdout=sp.PIPE, stderr=sp.PIPE, encoding='utf8')
             out, err = decomposeParDict.communicate()
             if "not found" in err:
                 print("WARNING -- decomposePar not found, have you called SOURCEME.sh in OpenFOAM APP")
